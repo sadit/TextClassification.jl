@@ -69,28 +69,26 @@ function vectorize(microtc::μTC, text)
 end
 
 function evaluate_model(config, train_corpus, train_y, test_corpus, test_y; verbose=true)
-    #verbose && println(stderr, "evaluating $config")
     mtc = fit(μTC, config, train_corpus, train_y)
     test_X = [vectorize(mtc, text) for text in test_corpus]
     ypred = predict(mtc, test_X)
     perf = (scores=scores(test_y, ypred), voc=length(mtc.model.tokens))
-    #verbose && println(stderr, "** Performance:", perf, config)
     perf
 end
 
 
 function microtc_random_configurations(ssize, H=nothing;
-        qlist=[3, 4, 5, 6],
+        qlist=[2, 3, 4, 5, 6],
         nlist=[1, 2, 3],
         slist=[(2, 1), (2, 2)],
-        kernel=[KCenters.relu_kernel], # [gaussian_kernel, laplacian_kernel, sigmoid_kernel, relu_kernel]
+        kernel=[relu_kernel, direct_kernel], # [gaussian_kernel, laplacian_kernel, sigmoid_kernel, relu_kernel]
         dist=[cosine_distance],
         k=[1],
         smooth=[2],
         p=[1.0],
         maxiters=[1, 3, 10],
         kind=[EntModel],
-        vkind=[EntModel],
+        vkind=[EntModel, EntTpModel],
         ncenters=[0], #, 10, 30, 100],
         weights=[:balance],
         split_entropy=[0.3, 0.7],
@@ -108,7 +106,6 @@ function microtc_random_configurations(ssize, H=nothing;
         ncenters_ = rand(ncenters)
         maxiters_ = ncenters == 0 ? 0 : rand(maxiters)
         split_entropy_ = ncenters == 0 ? 0.0 : rand(split_entropy)
-        verbose && println(stderr, ".($iter).")
 
         config = μTC_Configuration(
             rand(p), rand(qlist), rand(nlist), rand(slist),
@@ -146,7 +143,7 @@ function microtc_combine_configurations(config_list, ssize, H)
 end
 
 function microtc_search_params(corpus, y, configurations;
-        bsize=8,
+        bsize=4,
         ssize=8,
         folds=0.7,
         maxiters=8,
@@ -174,8 +171,8 @@ function microtc_search_params(corpus, y, configurations;
         S = NamedTuple[]
 
         for (config, score_) in configurations
-            score_ > 0.0 && continue
-            score_ = begin # @spawn begin
+            score_ >= 0.0 && continue
+            score_ = begin #@spawn begin
                 s = 0.0
                 local perf = nothing
                 for (itrain, itest) in folds
@@ -204,9 +201,13 @@ function microtc_search_params(corpus, y, configurations;
             end
 
             prev = curr
-            L = L[1:min(bsize, length(L))]
+            if verbose
+                println(stderr, "generating $ssize configurations using the best $bsize subsetstarting with $(length(configurations)))")
+                println(stderr, [l[end] for l in L])
+                println(stderr, L[1])
+            end
 
-            verbose && println(stderr, "generating $ssize configurations using the best $bsize subset, starting with $(length(configurations)), best $(L[1])")
+            L = L[1:min(bsize, length(L))]
             microtc_combine_configurations([x[1] for x in L], ssize, configurations)
             verbose && println(stderr, "finished with $(length(configurations))")
         end
