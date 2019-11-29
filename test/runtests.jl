@@ -10,11 +10,12 @@ using Test, TextClassification, StatsBase
     le = labelenc(labels)
     y = label2ind.(labels, le)
     corpus = X.text
-    best_list = microtc_search_params(corpus, y, microtc_random_configurations(8), bsize=3, ssize=8, maxiters=4, folds=3, verbose=true)
+    best_list = microtc_search_params(corpus, y, microtc_random_configurations(8), bsize=3, ssize=8, tol=0.001, maxiters=5, folds=3, verbose=true)
     for (i, b) in enumerate(best_list)
         @info i, b[1], b[2]
     end
     
+
 end
 
 

@@ -81,7 +81,7 @@ function microtc_random_configurations(ssize, H=nothing;
         qlist=[2, 3, 4, 5, 6],
         nlist=[1, 2, 3],
         slist=[(2, 1), (2, 2)],
-        kernel=[relu_kernel, direct_kernel], # [gaussian_kernel, laplacian_kernel, sigmoid_kernel, relu_kernel]
+        kernel=[relu_kernel], # [gaussian_kernel, laplacian_kernel, sigmoid_kernel, relu_kernel]
         dist=[cosine_distance],
         k=[1],
         smooth=[2],
@@ -104,9 +104,13 @@ function microtc_random_configurations(ssize, H=nothing;
     for i in 1:ssize
         iter += 1
         ncenters_ = rand(ncenters)
-        maxiters_ = ncenters == 0 ? 0 : rand(maxiters)
-        split_entropy_ = ncenters == 0 ? 0.0 : rand(split_entropy)
-
+        if ncenters_ == 0
+            maxiters_ = 0
+            split_entropy_ = 0.0
+        else
+            maxiters_ = rand(maxiters)
+            split_entropy_ = rand(split_entropy)
+        end
         config = μTC_Configuration(
             rand(p), rand(qlist), rand(nlist), rand(slist),
             rand(kind), rand(vkind), rand(kernel), rand(dist), rand(k),
