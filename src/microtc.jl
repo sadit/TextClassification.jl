@@ -100,7 +100,6 @@ function microtc_random_configurations(ssize, H=nothing;
     slist = filtered_power_set(slist, 0, 1)
     H = H === nothing ? Dict{μTC_Configuration,Float64}() : H
     iter = 0
-
     for i in 1:ssize
         iter += 1
         ncenters_ = rand(ncenters)
@@ -168,7 +167,7 @@ function microtc_search_params(corpus, y, configurations;
     end
     
     prev = 0.0
-    iter = 1
+    iter = 0
     while iter <= maxiters
         iter += 1
         C = μTC_Configuration[]
