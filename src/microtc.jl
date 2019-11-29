@@ -171,11 +171,11 @@ function microtc_search_params(corpus, y, configurations;
     while iter <= maxiters
         iter += 1
         C = μTC_Configuration[]
-        S = NamedTuple[]
+        S = []
 
         for (config, score_) in configurations
             score_ >= 0.0 && continue
-            score_ = begin #@spawn begin
+            score_ = @spawn begin
                 s = 0.0
                 local perf = nothing
                 for (itrain, itest) in folds
@@ -187,7 +187,6 @@ function microtc_search_params(corpus, y, configurations;
             push!(C, config)
             push!(S, score_)
         end
-        
         verbose && println(stderr, "iteration $iter finished")
 
         for (c, p) in zip(C, S)

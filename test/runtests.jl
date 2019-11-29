@@ -14,8 +14,6 @@ using Test, TextClassification, StatsBase
     for (i, b) in enumerate(best_list)
         @info i, b[1], b[2]
     end
-    
-
 end
 
 
