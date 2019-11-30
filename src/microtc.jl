@@ -80,7 +80,7 @@ const QLIST = filtered_power_set([2, 3, 4, 5, 6], 1, 3)
 const NLIST = filtered_power_set([1, 2, 3], 0, 2)
 const SLIST = filtered_power_set([(2, 1), (2, 2)], 0, 1)
 
-function microtc_random_configurations(ssize, H=nothing;
+function microtc_random_configurations(H, ssize;
         qlist=QLIST,
         nlist=NLIST,
         slist=SLIST,
@@ -129,31 +129,17 @@ function microtc_random_configurations(ssize, H=nothing;
     H
 end
 
-function microtc_combine_configurations(config_list, ssize, H;
-    qlist=QLIST, nlist=NLIST, slist=SLIST,
-    pert_push_prob=0.2, pert_pop_prob=0.2)
+function microtc_combine_configurations(config_list, ssize, H)
     function _sel()
         rand(config_list)
     end
     
-    function _pert(lst, kind)
-        if length(lst) > 0 && rand() < pert_pop_prob
-            lst = shuffle(lst)
-            pop!(lst)
-            sort!(lst)
-        end
-
-        if length(kind) > 0 && rand() < pert_push_prob
-            lst = sort!(unique(vcat(lst, rand(kind))))
-        end
-
-        lst
-    end
 
     for i in 1:ssize
         b = _sel()
-        qlist_, nlist_, slist_ = _pert(_sel().qlist, qlist), _pert(_sel().nlist, nlist), _pert(_sel().slist, slist)
-
+        qlist_, nlist_, slist_ = _sel().qlist, _sel().nlist, _sel().slist
+        length(qlist_) + length(nlist_) + length(slist_) == 0 && continue
+        
         config = μTC_Configuration(
             _sel().p,
             qlist_, nlist_, slist_,
@@ -170,6 +156,7 @@ end
 
 function microtc_search_params(corpus, y, configurations;
         bsize=4,
+        mutation_bsize=1,
         ssize=8,
         folds=0.7,
         maxiters=8,
@@ -178,6 +165,9 @@ function microtc_search_params(corpus, y, configurations;
         verbose=true,
         config_kwargs...
     )
+    if configurations isa Integer
+       configurations = microtc_random_configurations(nothing, configurations; config_kwargs...)
+    end
 
     n = length(y)
     if folds isa Integer
@@ -228,13 +218,19 @@ function microtc_search_params(corpus, y, configurations;
 
             prev = curr
             if verbose
-                println(stderr, "generating $ssize configurations using the best $bsize subsetstarting with $(length(configurations)))")
+                println(stderr, "generating $ssize configurations using top $bsize configurations, starting with $(length(configurations)))")
                 println(stderr, [l[end] for l in L])
                 println(stderr, L[1])
             end
 
-            L = L[1:min(bsize, length(L))]
-            microtc_combine_configurations([x[1] for x in L], ssize, configurations)
+            L = [L[i][1] for i in 1:min(bsize, length(L))]
+            if mutation_bsize > 0
+                for p in keys(microtc_random_configurations(nothing, mutation_bsize; config_kwargs...))
+                    push!(L, p)
+                end
+            end
+
+            microtc_combine_configurations(L, ssize, configurations)
             verbose && println(stderr, "finished with $(length(configurations))")
         end
     end
