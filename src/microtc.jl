@@ -4,7 +4,7 @@ using SimilaritySearch, KCenters, TextSearch, MLDataUtils
 using Distributed, IterTools, Random
 import TextSearch: vectorize
 import StatsBase: fit, predict
-export microtc_search_params, microtc_random_configurations, microtc_combine_configurations, fit, predict, vectorize
+export microtc_search_params, microtc_random_configurations, microtc_combine_configurations, filtered_power_set, fit, predict, vectorize
 
 struct μTC_Configuration
     p::Float64
@@ -22,6 +22,7 @@ struct μTC_Configuration
     ncenters::Int
     maxiters::Int
     weights
+    initial_clusters
 
     split_entropy::Float64
 end 
@@ -34,7 +35,7 @@ mutable struct μTC
     kernel::Function
 end
 
-function filtered_power_set(set, lowersize, uppersize)
+function filtered_power_set(set, lowersize=0, uppersize=5)
     lst = collect(subsets(set))
     filter(x -> lowersize <= length(x) <= uppersize, lst)
 end
@@ -53,51 +54,53 @@ function fit(::Type{μTC}, config::μTC_Configuration, train_corpus, train_y; ve
         C = kcenters(config.dist, train_X, train_y, TextSearch.centroid)
         cls = fit(NearestCentroid, C)
     else
-        C = kcenters(config.dist, train_X, config.ncenters, TextSearch.centroid, initial=:fft, recall=1.0, verbose=verbose, maxiters=config.maxiters)
+        C = kcenters(config.dist, train_X, config.ncenters, TextSearch.centroid, initial=config.initial_clusters, recall=1.0, verbose=verbose, maxiters=config.maxiters)
         cls = fit(NearestCentroid, cosine_distance, C, train_X, train_y, TextSearch.centroid, split_entropy=config.split_entropy, verbose=verbose)
     end
 
     μTC(cls, model, config, config.kernel(config.dist))
 end
 
-function predict(microtc::μTC, X)
-    ypred = predict(microtc.nc, microtc.kernel, X, microtc.config.k)
+function predict(tc::μTC, X)
+    ypred = predict(tc.nc, tc.kernel, X, tc.config.k)
 end
 
-function vectorize(microtc::μTC, text)
-    vectorize(microtc.model, microtc.config.vkind, text)
+function vectorize(tc::μTC, text)
+    vectorize(tc.model, tc.config.vkind, text)
 end
 
 function evaluate_model(config, train_corpus, train_y, test_corpus, test_y; verbose=true)
     mtc = fit(μTC, config, train_corpus, train_y)
     test_X = [vectorize(mtc, text) for text in test_corpus]
     ypred = predict(mtc, test_X)
-    perf = (scores=scores(test_y, ypred), voc=length(mtc.model.tokens))
-    perf
+    (scores=scores(test_y, ypred), voc=length(mtc.model.tokens))
 end
 
+const QLIST = filtered_power_set([2, 3, 4, 5, 6], 1, 3)
+const NLIST = filtered_power_set([1, 2, 3], 0, 2)
+const SLIST = filtered_power_set([(2, 1), (2, 2)], 0, 1)
 
 function microtc_random_configurations(ssize, H=nothing;
-        qlist=[2, 3, 4, 5, 6],
-        nlist=[1, 2, 3],
-        slist=[(2, 1), (2, 2)],
+        qlist=QLIST,
+        nlist=NLIST,
+        slist=SLIST,
         kernel=[relu_kernel], # [gaussian_kernel, laplacian_kernel, sigmoid_kernel, relu_kernel]
         dist=[cosine_distance],
         k=[1],
-        smooth=[2],
+        smooth=[0, 1, 3],
         p=[1.0],
         maxiters=[1, 3, 10],
         kind=[EntModel],
-        vkind=[EntModel, EntTpModel],
-        ncenters=[0], #, 10, 30, 100],
+        vkind=[EntModel, EntTpModel, EntTfModel],
+        ncenters=[0, 10, 30],
         weights=[:balance],
+        initial_clusters=[:fft, :dnet, :rand],
         split_entropy=[0.3, 0.7],
         verbose=true
     )
 
-    qlist = filtered_power_set(qlist, 1, 3)
-    nlist = filtered_power_set(nlist, 0, 2)
-    slist = filtered_power_set(slist, 0, 1)
+    _rand_list(lst) = length(lst) == 0 ? [] : rand(lst)
+
     H = H === nothing ? Dict{μTC_Configuration,Float64}() : H
     iter = 0
     for i in 1:ssize
@@ -106,15 +109,18 @@ function microtc_random_configurations(ssize, H=nothing;
         if ncenters_ == 0
             maxiters_ = 0
             split_entropy_ = 0.0
+            initial_clusters_ = :rand # nothing in fact
         else
             maxiters_ = rand(maxiters)
             split_entropy_ = rand(split_entropy)
+            initial_clusters_ = rand(initial_clusters)
         end
+
         config = μTC_Configuration(
-            rand(p), rand(qlist), rand(nlist), rand(slist),
+            rand(p), _rand_list(qlist), _rand_list(nlist), _rand_list(slist),
             rand(kind), rand(vkind), rand(kernel), rand(dist), rand(k),
             rand(smooth), ncenters_, maxiters_,
-            rand(weights), split_entropy_
+            rand(weights), initial_clusters_, split_entropy_
         )
         haskey(H, config) && continue
         H[config] = -1
@@ -123,20 +129,37 @@ function microtc_random_configurations(ssize, H=nothing;
     H
 end
 
-function microtc_combine_configurations(config_list, ssize, H)
+function microtc_combine_configurations(config_list, ssize, H;
+    qlist=QLIST, nlist=NLIST, slist=SLIST,
+    pert_push_prob=0.2, pert_pop_prob=0.2)
     function _sel()
         rand(config_list)
     end
     
+    function _pert(lst, kind)
+        if length(lst) > 0 && rand() < pert_pop_prob
+            lst = shuffle(lst)
+            pop!(lst)
+            sort!(lst)
+        end
+
+        if length(kind) > 0 && rand() < pert_push_prob
+            lst = sort!(unique(vcat(lst, rand(kind))))
+        end
+
+        lst
+    end
+
     for i in 1:ssize
         b = _sel()
+        qlist_, nlist_, slist_ = _pert(_sel().qlist, qlist), _pert(_sel().nlist, nlist), _pert(_sel().slist, slist)
 
         config = μTC_Configuration(
             _sel().p,
-            _sel().qlist, _sel().nlist, _sel().slist,
+            qlist_, nlist_, slist_,
             _sel().kind, _sel().vkind, _sel().kernel, _sel().dist, _sel().k,
             _sel().smooth, b.ncenters, b.maxiters,
-            _sel().weights, b.split_entropy
+            _sel().weights, b.initial_clusters, b.split_entropy
         )
         haskey(H, config) && continue
         H[config] = -1
@@ -152,7 +175,8 @@ function microtc_search_params(corpus, y, configurations;
         maxiters=8,
         score=:macro_recall,
         tol=0.01,
-        verbose=true
+        verbose=true,
+        config_kwargs...
     )
 
     n = length(y)
@@ -175,7 +199,7 @@ function microtc_search_params(corpus, y, configurations;
 
         for (config, score_) in configurations
             score_ >= 0.0 && continue
-            score_ = @spawn begin
+            score_ = begin #@spawn begin
                 s = 0.0
                 local perf = nothing
                 for (itrain, itest) in folds
