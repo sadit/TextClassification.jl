@@ -86,13 +86,13 @@ function microtc_random_configurations(H, ssize;
         slist=SLIST,
         kernel=[relu_kernel], # [gaussian_kernel, laplacian_kernel, sigmoid_kernel, relu_kernel]
         dist=[cosine_distance],
-        k=[1],
+        k=[1, 3],
         smooth=[0, 1, 3],
         p=[1.0],
         maxiters=[1, 3, 10],
         kind=[EntModel],
-        vkind=[EntModel, EntTpModel, EntTfModel],
-        ncenters=[0, 10, 30],
+        vkind=[EntModel, EntTpModel],
+        ncenters=[0, 10],
         weights=[:balance],
         initial_clusters=[:fft, :dnet, :rand],
         split_entropy=[0.3, 0.7],
@@ -110,15 +110,17 @@ function microtc_random_configurations(H, ssize;
             maxiters_ = 0
             split_entropy_ = 0.0
             initial_clusters_ = :rand # nothing in fact
+            k_ = 1
         else
             maxiters_ = rand(maxiters)
             split_entropy_ = rand(split_entropy)
             initial_clusters_ = rand(initial_clusters)
+            k_ = rand(k)
         end
 
         config = μTC_Configuration(
             rand(p), _rand_list(qlist), _rand_list(nlist), _rand_list(slist),
-            rand(kind), rand(vkind), rand(kernel), rand(dist), rand(k),
+            rand(kind), rand(vkind), rand(kernel), rand(dist), k_,
             rand(smooth), ncenters_, maxiters_,
             rand(weights), initial_clusters_, split_entropy_
         )
@@ -132,8 +134,7 @@ end
 function microtc_combine_configurations(config_list, ssize, H)
     function _sel()
         rand(config_list)
-    end
-    
+    end  
 
     for i in 1:ssize
         b = _sel()
@@ -143,7 +144,7 @@ function microtc_combine_configurations(config_list, ssize, H)
         config = μTC_Configuration(
             _sel().p,
             qlist_, nlist_, slist_,
-            _sel().kind, _sel().vkind, _sel().kernel, _sel().dist, _sel().k,
+            _sel().kind, _sel().vkind, _sel().kernel, _sel().dist, b.k,
             _sel().smooth, b.ncenters, b.maxiters,
             _sel().weights, b.initial_clusters, b.split_entropy
         )

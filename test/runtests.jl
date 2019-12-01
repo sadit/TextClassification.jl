@@ -13,13 +13,12 @@ using Test, TextClassification, StatsBase
     best_list = microtc_search_params(
         corpus, y, 8;
         # search hyper-parameters
-        bsize=3, ssize=8, tol=0.001, maxiters=5, folds=3, verbose=true,
+        tol=0.001, maxiters=5, folds=3, verbose=true,
         # configuration space
         qlist=filtered_power_set([3, 5], 1, 2),
         nlist=filtered_power_set([1, 2], 0, 1),
         slist=[],
-        ncenters=[0]
-    )
+     )
 
     for (i, b) in enumerate(best_list)
         @info i, b[1], b[2]
