@@ -211,8 +211,8 @@ function microtc_search_params(corpus, y, configurations;
         if iter <= maxiters
             L = sort!(collect(configurations), by=x->x[2], rev=true)
             curr = L[1][2]
-            if curr - prev <= tol
-                verbose && println(stderr, "stopping on iteration $iter due to a possible convergence")
+            if abs(curr - prev) <= tol                
+                verbose && println(stderr, "stopping on iteration $iter due to a possible convergence ($curr ≃ $prev, tol: $tol)")
                 break
             end
 
