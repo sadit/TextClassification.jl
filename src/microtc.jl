@@ -189,7 +189,7 @@ function microtc_search_params(corpus, y, configurations;
 
         for (config, score_) in configurations
             score_ >= 0.0 && continue
-            score_ = begin #@spawn begin
+            score_ = @spawn begin
                 s = 0.0
                 local perf = nothing
                 for (itrain, itest) in folds
