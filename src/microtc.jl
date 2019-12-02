@@ -4,6 +4,7 @@ using SimilaritySearch, KCenters, TextSearch, MLDataUtils
 using Distributed, IterTools, Random
 import TextSearch: vectorize
 import StatsBase: fit, predict
+import Base: hash
 export microtc_search_params, microtc_random_configurations, microtc_combine_configurations, filtered_power_set, fit, predict, vectorize
 
 struct μTC_Configuration
@@ -27,6 +28,8 @@ struct μTC_Configuration
     split_entropy::Float64
 end 
 
+
+hash(m::μTC_Configuration) = hash(repr(m))
 
 mutable struct μTC
     nc::NearestCentroid
@@ -60,6 +63,8 @@ function fit(::Type{μTC}, config::μTC_Configuration, train_corpus, train_y; ve
 
     μTC(cls, model, config, config.kernel(config.dist))
 end
+
+
 
 function predict(tc::μTC, X)
     ypred = predict(tc.nc, tc.kernel, X, tc.config.k)
