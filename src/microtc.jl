@@ -4,7 +4,7 @@ using SimilaritySearch, KCenters, TextSearch, MLDataUtils
 using Distributed, IterTools, Random
 import TextSearch: vectorize
 import StatsBase: fit, predict
-import Base: hash
+import Base: hash, isequal
 export microtc_search_params, microtc_random_configurations, microtc_combine_configurations, filtered_power_set, fit, predict, vectorize
 
 struct μTC_Configuration
