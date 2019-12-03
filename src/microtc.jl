@@ -29,7 +29,7 @@ struct μTC_Configuration
 end 
 
 
-hash(m::μTC_Configuration) = hash(repr(m))
+hash(m::μTC_Configuration, h=0x0) = hash(repr(m), h)
 
 mutable struct μTC
     nc::NearestCentroid
@@ -63,8 +63,6 @@ function fit(::Type{μTC}, config::μTC_Configuration, train_corpus, train_y; ve
 
     μTC(cls, model, config, config.kernel(config.dist))
 end
-
-
 
 function predict(tc::μTC, X)
     ypred = predict(tc.nc, tc.kernel, X, tc.config.k)
