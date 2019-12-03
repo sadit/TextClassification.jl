@@ -29,7 +29,8 @@ struct μTC_Configuration
 end 
 
 
-hash(m::μTC_Configuration, h::Unsigned) = hash(repr(m), h)
+hash(a::μTC_Configuration) = hash(repr(a))
+isequal(a::μTC_Configuration, b::μTC_Configuration) = isequal(repr(a), repr(b))
 
 mutable struct μTC
     nc::NearestCentroid
