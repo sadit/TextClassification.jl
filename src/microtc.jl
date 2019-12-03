@@ -164,7 +164,7 @@ function microtc_search_params(corpus, y, configurations;
         mutation_bsize=1,
         ssize=8,
         folds=0.7,
-        maxiters=8,
+        search_maxiters=8,
         score=:macro_recall,
         tol=0.01,
         verbose=true,
@@ -187,7 +187,7 @@ function microtc_search_params(corpus, y, configurations;
     
     prev = 0.0
     iter = 0
-    while iter <= maxiters
+    while iter <= search_maxiters
         iter += 1
         C = μTC_Configuration[]
         S = []
@@ -213,7 +213,7 @@ function microtc_search_params(corpus, y, configurations;
             configurations[c] = p.score
         end
 
-        if iter <= maxiters
+        if iter <= search_maxiters
             L = sort!(collect(configurations), by=x->x[2], rev=true)
             curr = L[1][2]
             if abs(curr - prev) <= tol                
