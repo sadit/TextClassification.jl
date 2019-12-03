@@ -1,7 +1,7 @@
 name = "TextClassification"
 uuid = "8e067cb0-742a-4f90-93f9-f1fa01b385ec"
 authors = ["Eric S. Tellez <donsadit@gmail.com>"]
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"
