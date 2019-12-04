@@ -13,7 +13,7 @@ using Test, TextClassification, StatsBase
     best_list = microtc_search_params(
         corpus, y, 8;
         # search hyper-parameters
-        tol=0.001, maxiters=5, folds=3, verbose=true,
+        tol=0.001, search_maxiters=5, folds=3, verbose=true,
         # configuration space
         qlist=filtered_power_set([3, 5], 1, 2),
         nlist=filtered_power_set([1, 2], 0, 1),

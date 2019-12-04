@@ -1,7 +1,7 @@
 # This file is a part of TextSearch.jl
 # License is Apache 2.0: https://www.apache.org/licenses/LICENSE-2.0.txt
 using SimilaritySearch, KCenters, TextSearch, MLDataUtils
-using Distributed, IterTools, Random
+using Distributed, IterTools, Random, StatsBase
 import TextSearch: vectorize
 import StatsBase: fit, predict
 import Base: hash, isequal
@@ -85,21 +85,21 @@ const NLIST = filtered_power_set([1, 2, 3], 0, 2)
 const SLIST = filtered_power_set([(2, 1), (2, 2)], 0, 1)
 
 function microtc_random_configurations(H, ssize;
-        qlist=QLIST,
-        nlist=NLIST,
-        slist=SLIST,
-        kernel=[relu_kernel], # [gaussian_kernel, laplacian_kernel, sigmoid_kernel, relu_kernel]
-        dist=[cosine_distance],
-        k=[1, 3],
-        smooth=[0, 1, 3],
-        p=[1.0],
-        maxiters=[1, 3, 10],
-        kind=[EntModel],
-        vkind=[EntModel, EntTpModel],
-        ncenters=[0, 10],
-        weights=[:balance],
-        initial_clusters=[:fft, :dnet, :rand],
-        split_entropy=[0.3, 0.7],
+        qlist::AbstractVector=QLIST,
+        nlist::AbstractVector=NLIST,
+        slist::AbstractVector=SLIST,
+        kernel::AbstractVector=[relu_kernel], # [gaussian_kernel, laplacian_kernel, sigmoid_kernel, relu_kernel]
+        dist::AbstractVector=[cosine_distance],
+        k::AbstractVector=[1, 3],
+        smooth::AbstractVector=[0, 1, 3],
+        p::AbstractVector=[1.0],
+        maxiters::AbstractVector=[1, 3, 10],
+        kind::AbstractVector=[EntModel],
+        vkind::AbstractVector=[EntModel, EntTpModel],
+        ncenters::AbstractVector=[0, 10],
+        weights::AbstractVector=[:balance],
+        initial_clusters::AbstractVector=[:fft, :dnet, :rand],
+        split_entropy::AbstractVector=[0.3, 0.7],
         verbose=true
     )
 
@@ -170,6 +170,7 @@ function microtc_search_params(corpus, y, configurations;
         verbose=true,
         config_kwargs...
     )
+    
     if configurations isa Integer
        configurations = microtc_random_configurations(nothing, configurations; config_kwargs...)
     end
@@ -185,6 +186,12 @@ function microtc_search_params(corpus, y, configurations;
         folds = [(indexes[1:m], indexes[m+1:end])]
     end
     
+    if score isa Symbol
+        scorefun = (perf) -> perf.scores[score]
+    else
+        scorefun = score::Function
+    end
+    
     prev = 0.0
     iter = 0
     while iter <= search_maxiters
@@ -194,23 +201,20 @@ function microtc_search_params(corpus, y, configurations;
 
         for (config, score_) in configurations
             score_ >= 0.0 && continue
-            score_ = @spawn begin
-                s = 0.0
-                local perf = nothing
-                for (itrain, itest) in folds
-                    perf = evaluate_model(config, corpus[itrain], y[itrain], corpus[itest], y[itest])
-                    s += perf.scores[score] * 1/length(folds)
-                end
-                (score=s, perf...)
+            push!(S, [])
+            
+            for (itrain, itest) in folds
+                perf = @spawn evaluate_model(config, corpus[itrain], y[itrain], corpus[itest], y[itest])
+                push!(S[end], perf)
             end
+        
             push!(C, config)
-            push!(S, score_)
         end
+        
         verbose && println(stderr, "iteration $iter finished")
 
-        for (c, p) in zip(C, S)
-            p = fetch(p)
-            configurations[c] = p.score
+        for (c, perf_list) in zip(C, S)
+            configurations[c] = mean([scorefun(fetch(p)) for p in perf_list])
         end
 
         if iter <= search_maxiters
