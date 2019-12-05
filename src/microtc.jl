@@ -146,21 +146,19 @@ function microtc_random_configurations(H, ssize;
             maxiters_ = 0
             split_entropy_ = 0.0
             initial_clusters_ = :rand # nothing in fact
-            k_ = 1,
-            recall_ = 1.0
+            k_ = 1
         else
             maxiters_ = rand(maxiters)
             split_entropy_ = rand(split_entropy)
             initial_clusters_ = rand(initial_clusters)
             k_ = rand(k)
-            recall_ = rand(recall)
         end
 
         config = μTC_Configuration(
             rand(p), _rand_list(qlist), _rand_list(nlist), _rand_list(slist),
             rand(kind), rand(vkind), rand(kernel), rand(dist), k_,
             rand(smooth), ncenters_, maxiters_,
-            recall_, rand(weights), initial_clusters_, split_entropy_
+            rand(recall), rand(weights), initial_clusters_, split_entropy_
         )
         haskey(H, config) && continue
         H[config] = -1
@@ -184,7 +182,7 @@ function microtc_combine_configurations(config_list, ssize, H)
             qlist_, nlist_, slist_,
             _sel().kind, _sel().vkind, _sel().kernel, _sel().dist, b.k,
             _sel().smooth, b.ncenters, b.maxiters,
-            b.recall, _sel().weights, b.initial_clusters, b.split_entropy
+            _sel().recall, _sel().weights, b.initial_clusters, b.split_entropy
         )
         haskey(H, config) && continue
         H[config] = -1
