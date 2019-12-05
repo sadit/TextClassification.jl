@@ -31,9 +31,9 @@ end
 
 function μTC_Configuration(;
         p::Float64=1.0,
-        qlist::Vector{Int}=[5],
-        nlist::Vector{Int}=[],
-        slist::Vector{Tuple{Int,Int}}=[],
+        qlist::AbstractVector=[5],
+        nlist::AbstractVector=[],
+        slist::AbstractVector=[],
         
         kind::Type=EntModel,
         vkind::Type=EntModel,
