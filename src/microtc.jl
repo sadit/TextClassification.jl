@@ -24,6 +24,7 @@ struct μTC_Configuration
     ncenters::Int
     maxiters::Int
     
+    recall::Float64
     weights
     initial_clusters
     split_entropy::Float64
@@ -45,6 +46,7 @@ function μTC_Configuration(;
         ncenters::Integer=0,
         maxiters::Integer=1,
         
+        recall::Real=1.0,
         weights=:balance,
         initial_clusters=:rand,
         split_entropy::Real=0.7)
@@ -52,7 +54,7 @@ function μTC_Configuration(;
     μTC_Configuration(p, qlist, nlist, slist,
                       kind, vkind, kernel, dist,
                       k, smooth, ncenters, maxiters,
-                      weights, initial_clusters, split_entropy)
+                      recall, weights, initial_clusters, split_entropy)
 end
 
 hash(a::μTC_Configuration) = hash(repr(a))
@@ -85,7 +87,7 @@ function fit(::Type{μTC}, config::μTC_Configuration, train_corpus, train_y; ve
         C = kcenters(config.dist, train_X, train_y, TextSearch.centroid)
         cls = fit(NearestCentroid, C)
     else
-        C = kcenters(config.dist, train_X, config.ncenters, TextSearch.centroid, initial=config.initial_clusters, recall=1.0, verbose=verbose, maxiters=config.maxiters)
+        C = kcenters(config.dist, train_X, config.ncenters, TextSearch.centroid, initial=config.initial_clusters, recall=config.recall, verbose=verbose, maxiters=config.maxiters)
         cls = fit(NearestCentroid, cosine_distance, C, train_X, train_y, TextSearch.centroid, split_entropy=config.split_entropy, verbose=verbose)
     end
 
@@ -123,6 +125,7 @@ function microtc_random_configurations(H, ssize;
         smooth::AbstractVector=[0, 1, 3],
         p::AbstractVector=[1.0],
         maxiters::AbstractVector=[1, 3, 10],
+        recall::AbstractVector=[1.0],
         kind::AbstractVector=[EntModel],
         vkind::AbstractVector=[EntModel, EntTpModel],
         ncenters::AbstractVector=[0, 10],
@@ -143,19 +146,21 @@ function microtc_random_configurations(H, ssize;
             maxiters_ = 0
             split_entropy_ = 0.0
             initial_clusters_ = :rand # nothing in fact
-            k_ = 1
+            k_ = 1,
+            recall_ = 1.0
         else
             maxiters_ = rand(maxiters)
             split_entropy_ = rand(split_entropy)
             initial_clusters_ = rand(initial_clusters)
             k_ = rand(k)
+            recall_ = rand(recall)
         end
 
         config = μTC_Configuration(
             rand(p), _rand_list(qlist), _rand_list(nlist), _rand_list(slist),
             rand(kind), rand(vkind), rand(kernel), rand(dist), k_,
             rand(smooth), ncenters_, maxiters_,
-            rand(weights), initial_clusters_, split_entropy_
+            recall_, rand(weights), initial_clusters_, split_entropy_
         )
         haskey(H, config) && continue
         H[config] = -1
@@ -179,7 +184,7 @@ function microtc_combine_configurations(config_list, ssize, H)
             qlist_, nlist_, slist_,
             _sel().kind, _sel().vkind, _sel().kernel, _sel().dist, b.k,
             _sel().smooth, b.ncenters, b.maxiters,
-            _sel().weights, b.initial_clusters, b.split_entropy
+            b.recall, _sel().weights, b.initial_clusters, b.split_entropy
         )
         haskey(H, config) && continue
         H[config] = -1
