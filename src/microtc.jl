@@ -43,7 +43,7 @@ function μTC_Configuration(;
         k::Int=1,
         smooth::Real=3.0,
         ncenters::Integer=0,
-        maxiters::Integeer=1,
+        maxiters::Integer=1,
         
         weights=:balance,
         initial_clusters=:rand,
