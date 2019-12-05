@@ -30,7 +30,7 @@ struct μTC_Configuration
 end
 
 function μTC_Configuration(;
-        p::Float64=1.0,
+        p::Real=1.0,
         qlist::AbstractVector=[5],
         nlist::AbstractVector=[],
         slist::AbstractVector=[],
@@ -41,13 +41,13 @@ function μTC_Configuration(;
         dist::Function=cosine_distance,
         
         k::Int=1,
-        smooth::Float64=3.0,
-        ncenters::Int=0,
-        maxiters::Int=1,
+        smooth::Real=3.0,
+        ncenters::Integer=0,
+        maxiters::Integeer=1,
         
         weights=:balance,
         initial_clusters=:rand,
-        split_entropy::Float64=0.7)
+        split_entropy::Real=0.7)
     
     μTC_Configuration(p, qlist, nlist, slist,
                       kind, vkind, kernel, dist,
