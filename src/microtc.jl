@@ -18,16 +18,42 @@ struct μTC_Configuration
     vkind::Type
     kernel::Function
     dist::Function
+    
     k::Int
-
     smooth::Float64
     ncenters::Int
     maxiters::Int
+    
     weights
     initial_clusters
-
     split_entropy::Float64
-end 
+end
+
+function μTC_Configuration(;
+        p::Float64=1.0,
+        qlist::Vector{Int}=[5],
+        nlist::Vector{Int}=[],
+        slist::Vector{Tuple{Int,Int}}=[],
+        
+        kind::Type=EntModel,
+        vkind::Type=EntModel,
+        kernel::Function=relu_kernel, # [gaussian_kernel, laplacian_kernel, sigmoid_kernel, relu_kernel]
+        dist::Function=cosine_distance,
+        
+        k::Int=1,
+        smooth::Float64=3.0,
+        ncenters::Int=0,
+        maxiters::Int=1,
+        
+        weights=:balance,
+        initial_clusters=:rand,
+        split_entropy::Float64=0.7)
+    
+    μTC_Configuration(p, qlist, nlist, slist,
+                      kind, vkind, kernel, dist,
+                      k, smooth, ncenters, maxiters,
+                      weights, initial_clusters, split_entropy)
+end
 
 hash(a::μTC_Configuration) = hash(repr(a))
 isequal(a::μTC_Configuration, b::μTC_Configuration) = isequal(repr(a), repr(b))
@@ -43,6 +69,7 @@ function filtered_power_set(set, lowersize=0, uppersize=5)
     lst = collect(subsets(set))
     filter(x -> lowersize <= length(x) <= uppersize, lst)
 end
+
 
 function fit(::Type{μTC}, config::μTC_Configuration, train_corpus, train_y; verbose=true)
     textconfig = TextConfig(qlist=config.qlist, nlist=config.nlist, slist=config.slist)
@@ -64,6 +91,8 @@ function fit(::Type{μTC}, config::μTC_Configuration, train_corpus, train_y; ve
 
     μTC(cls, model, config, config.kernel(config.dist))
 end
+
+fit(config::μTC_Configuration, train_corpus, train_y; verbose=true) = fit(μTC, config, train_corpus, train_y; verbose=verbose)
 
 function predict(tc::μTC, X)
     ypred = predict(tc.nc, tc.kernel, X, tc.config.k)
