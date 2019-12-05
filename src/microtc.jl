@@ -90,7 +90,7 @@ function microtc_random_configurations(H, ssize;
         slist::AbstractVector=SLIST,
         kernel::AbstractVector=[relu_kernel], # [gaussian_kernel, laplacian_kernel, sigmoid_kernel, relu_kernel]
         dist::AbstractVector=[cosine_distance],
-        k::AbstractVector=[1, 3],
+        k::AbstractVector=[1],
         smooth::AbstractVector=[0, 1, 3],
         p::AbstractVector=[1.0],
         maxiters::AbstractVector=[1, 3, 10],
