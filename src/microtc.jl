@@ -8,14 +8,14 @@ import Base: hash, isequal
 export microtc_search_params, microtc_random_configurations, microtc_combine_configurations, filtered_power_set, fit, predict, vectorize, μTC_Configuration
 import Base: hash, isequal
 
-struct μTC_Configuration
+struct μTC_Configuration{Kind,VKind}
     p::Float64
     qlist::Vector{Int}
     nlist::Vector{Int}
     slist::Vector{Tuple{Int,Int}}
 
-    kind::Type
-    vkind::Type
+    kind::Type{Kind}
+    vkind::Type{VKind}
     kernel::Function
     dist::Function
     
@@ -60,10 +60,10 @@ end
 hash(a::μTC_Configuration) = hash(repr(a))
 isequal(a::μTC_Configuration, b::μTC_Configuration) = isequal(repr(a), repr(b))
 
-mutable struct μTC
+mutable struct μTC{Kind,VKind}
     nc::NearestCentroid
-    model::TextSearch.Model
-    config::μTC_Configuration
+    model::Kind
+    config::μTC_Configuration{Kind,VKind}
     kernel::Function
 end
 
@@ -72,15 +72,28 @@ function filtered_power_set(set, lowersize=0, uppersize=5)
     filter(x -> lowersize <= length(x) <= uppersize, lst)
 end
 
-
-function fit(::Type{μTC}, config::μTC_Configuration, train_corpus, train_y; verbose=true)
+function create_textmodel(config::μTC_Configuration{EntModel,VKind}, train_corpus, train_y) where VKind
     textconfig = TextConfig(qlist=config.qlist, nlist=config.nlist, slist=config.slist)
-
-    model = fit(config.kind, textconfig, train_corpus, train_y, smooth=config.smooth, weights=config.weights)
+    model = fit(EntModel, textconfig, train_corpus, train_y, smooth=config.smooth, weights=config.weights)
     if config.p < 1.0
         model = prune_select_top(model, config.p)
     end
 
+    model
+end
+
+function create_textmodel(config::μTC_Configuration{VectorModel,VKind}, train_corpus, train_y) where VKind
+    textconfig = TextConfig(qlist=config.qlist, nlist=config.nlist, slist=config.slist)
+    model = fit(VectorModel, textconfig, train_corpus)
+    if config.p < 1.0
+        model = prune_select_top(model, config.p)
+    end
+
+    model
+end
+
+function fit(::Type{μTC}, config::μTC_Configuration{Kind,VKind}, train_corpus, train_y; verbose=true) where {Kind,VKind}
+    model = create_textmodel(config, train_corpus, train_y)
     train_X = [vectorize(model, config.vkind, text) for text in train_corpus]
     
     if config.ncenters == 0
@@ -91,7 +104,7 @@ function fit(::Type{μTC}, config::μTC_Configuration, train_corpus, train_y; ve
         cls = fit(NearestCentroid, cosine_distance, C, train_X, train_y, TextSearch.centroid, split_entropy=config.split_entropy, verbose=verbose)
     end
 
-    μTC(cls, model, config, config.kernel(config.dist))
+    μTC{Kind,VKind}(cls, model, config, config.kernel(config.dist))
 end
 
 fit(config::μTC_Configuration, train_corpus, train_y; verbose=true) = fit(μTC, config, train_corpus, train_y; verbose=verbose)
@@ -100,8 +113,8 @@ function predict(tc::μTC, X)
     ypred = predict(tc.nc, tc.kernel, X, tc.config.k)
 end
 
-function vectorize(tc::μTC, text)
-    vectorize(tc.model, tc.config.vkind, text)
+function vectorize(tc::μTC{Kind,VKind}, text) where {Kind,VKind}
+    vectorize(tc.model, VKind, text)
 end
 
 function evaluate_model(config, train_corpus, train_y, test_corpus, test_y; verbose=true)
@@ -126,12 +139,12 @@ function microtc_random_configurations(H, ssize;
         p::AbstractVector=[1.0],
         maxiters::AbstractVector=[1, 3, 10],
         recall::AbstractVector=[1.0],
-        kind::AbstractVector=[EntModel],
-        vkind::AbstractVector=[EntModel, EntTpModel],
+        kind::AbstractVector=[EntModel, VectorModel],
+        vkind=Dict(EntModel => [EntModel, EntTpModel, EntTpModel], VectorModel => [TfModel, IdfModel, TfidfModel, FreqModel]),
         ncenters::AbstractVector=[0, 10],
         weights::AbstractVector=[:balance],
         initial_clusters::AbstractVector=[:fft, :dnet, :rand],
-        split_entropy::AbstractVector=[0.3, 0.7],
+        split_entropy::AbstractVector=[0.3, 0.6, 0.9],
         verbose=true
     )
 
@@ -154,9 +167,16 @@ function microtc_random_configurations(H, ssize;
             k_ = rand(k)
         end
 
-        config = μTC_Configuration(
+        kind_ = rand(kind)
+        if vkind isa Dict
+            vkind_ = vkind[kind_] |> rand
+        else
+            vkind_ = rand(vkind)
+        end
+        
+        config = μTC_Configuration{kind_,vkind_}(
             rand(p), _rand_list(qlist), _rand_list(nlist), _rand_list(slist),
-            rand(kind), rand(vkind), rand(kernel), rand(dist), k_,
+            kind_, vkind_, rand(kernel), rand(dist), k_,
             rand(smooth), ncenters_, maxiters_,
             rand(recall), rand(weights), initial_clusters_, split_entropy_
         )
@@ -173,14 +193,18 @@ function microtc_combine_configurations(config_list, ssize, H)
     end  
 
     for i in 1:ssize
+        a = _sel()
+        kind_ = a.kind
+        vkind_ = a.vkind
+
         b = _sel()
         qlist_, nlist_, slist_ = _sel().qlist, _sel().nlist, _sel().slist
         length(qlist_) + length(nlist_) + length(slist_) == 0 && continue
         
-        config = μTC_Configuration(
+        config = μTC_Configuration{kind_, vkind_}(
             _sel().p,
             qlist_, nlist_, slist_,
-            _sel().kind, _sel().vkind, _sel().kernel, _sel().dist, b.k,
+            kind_, vkind_, _sel().kernel, _sel().dist, b.k,
             _sel().smooth, b.ncenters, b.maxiters,
             _sel().recall, _sel().weights, b.initial_clusters, b.split_entropy
         )
@@ -237,6 +261,7 @@ function microtc_search_params(corpus, y, configurations;
             
             for (itrain, itest) in folds
                 perf = @spawn evaluate_model(config, corpus[itrain], y[itrain], corpus[itest], y[itest])
+                #perf = evaluate_model(config, corpus[itrain], y[itrain], corpus[itest], y[itest])
                 push!(S[end], perf)
             end
         
@@ -264,7 +289,7 @@ function microtc_search_params(corpus, y, configurations;
                 println(stderr, L[1])
             end
 
-            L = [L[i][1] for i in 1:min(bsize, length(L))]
+            L =  μTC_Configuration[L[i][1] for i in 1:min(bsize, length(L))]
             if mutation_bsize > 0
                 for p in keys(microtc_random_configurations(nothing, mutation_bsize; config_kwargs...))
                     push!(L, p)
