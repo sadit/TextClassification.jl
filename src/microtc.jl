@@ -10,6 +10,15 @@ import Base: hash, isequal
 
 struct μTC_Configuration{Kind,VKind}
     p::Float64
+
+    del_diac::Bool
+    del_dup::Bool
+    del_punc::Bool
+    group_num::Bool
+    group_url::Bool
+    group_usr::Bool
+    group_emo::Bool
+ 
     qlist::Vector{Int}
     nlist::Vector{Int}
     slist::Vector{Tuple{Int,Int}}
@@ -32,6 +41,15 @@ end
 
 function μTC_Configuration(;
         p::Real=1.0,
+
+        del_diac::Bool=true,
+        del_dup::Bool=false,
+        del_punc::Bool=false,
+        group_num::Bool=true,
+        group_url::Bool=true,
+        group_usr::Bool=false,
+        group_emo::Bool=false,
+ 
         qlist::AbstractVector=[5],
         nlist::AbstractVector=[],
         slist::AbstractVector=[],
@@ -42,26 +60,30 @@ function μTC_Configuration(;
         dist::Function=cosine_distance,
         
         k::Int=1,
-        smooth::Real=3.0,
+        smooth::AbstractFloat=3.0,
         ncenters::Integer=0,
         maxiters::Integer=1,
         
-        recall::Real=1.0,
+        recall::AbstractFloat=1.0,
         weights=:balance,
         initial_clusters=:rand,
-        split_entropy::Real=0.7)
+        split_entropy::AbstractFloat=0.9)
     
-    μTC_Configuration(p, qlist, nlist, slist,
-                      kind, vkind, kernel, dist,
-                      k, smooth, ncenters, maxiters,
-                      recall, weights, initial_clusters, split_entropy)
+    μTC_Configuration(
+        p,
+        del_diac, del_dup, del_punc,
+        group_num, group_url, group_usr, group_emo,
+        qlist, nlist, convert(Vector{Tuple{Int,Int}}, slist),
+        kind, vkind, kernel, dist,
+        k, smooth, ncenters, maxiters,
+        recall, weights, initial_clusters, split_entropy)
 end
 
 hash(a::μTC_Configuration) = hash(repr(a))
 isequal(a::μTC_Configuration, b::μTC_Configuration) = isequal(repr(a), repr(b))
 
-mutable struct μTC{Kind,VKind}
-    nc::NearestCentroid
+mutable struct μTC{Kind,VKind,T}
+    nc::NearestCentroid{T}
     model::Kind
     config::μTC_Configuration{Kind,VKind}
     kernel::Function
@@ -72,9 +94,23 @@ function filtered_power_set(set, lowersize=0, uppersize=5)
     filter(x -> lowersize <= length(x) <= uppersize, lst)
 end
 
+function create_textconfig(config::μTC_Configuration)
+    TextConfig(
+        del_diac = config.del_diac,
+        del_dup = config.del_dup,
+        del_punc = config.del_punc,
+        group_num = config.group_num,
+        group_url = config.group_url,
+        group_usr = config.group_usr,
+        group_emo = config.group_emo,
+        qlist = config.qlist,
+        nlist = config.nlist,
+        slist = config.slist
+    )
+end
+
 function create_textmodel(config::μTC_Configuration{EntModel,VKind}, train_corpus, train_y) where VKind
-    textconfig = TextConfig(qlist=config.qlist, nlist=config.nlist, slist=config.slist)
-    model = fit(EntModel, textconfig, train_corpus, train_y, smooth=config.smooth, weights=config.weights)
+    model = fit(EntModel, create_textconfig(config), train_corpus, train_y, smooth=config.smooth, weights=config.weights)
     if config.p < 1.0
         model = prune_select_top(model, config.p)
     end
@@ -83,8 +119,7 @@ function create_textmodel(config::μTC_Configuration{EntModel,VKind}, train_corp
 end
 
 function create_textmodel(config::μTC_Configuration{VectorModel,VKind}, train_corpus, train_y) where VKind
-    textconfig = TextConfig(qlist=config.qlist, nlist=config.nlist, slist=config.slist)
-    model = fit(VectorModel, textconfig, train_corpus)
+    model = fit(VectorModel, create_textconfig(config), train_corpus)
     if config.p < 1.0
         model = prune_select_top(model, config.p)
     end
@@ -104,7 +139,7 @@ function fit(::Type{μTC}, config::μTC_Configuration{Kind,VKind}, train_corpus,
         cls = fit(NearestCentroid, cosine_distance, C, train_X, train_y, TextSearch.centroid, split_entropy=config.split_entropy, verbose=verbose)
     end
 
-    μTC{Kind,VKind}(cls, model, config, config.kernel(config.dist))
+    μTC(cls, model, config, config.kernel(config.dist))
 end
 
 fit(config::μTC_Configuration, train_corpus, train_y; verbose=true) = fit(μTC, config, train_corpus, train_y; verbose=verbose)
@@ -115,6 +150,10 @@ end
 
 function vectorize(tc::μTC{Kind,VKind}, text) where {Kind,VKind}
     vectorize(tc.model, VKind, text)
+end
+
+function transform(tc::μTC{Kind,VKind}, text) where {Kind,VKind}
+
 end
 
 function evaluate_model(config, train_corpus, train_y, test_corpus, test_y; verbose=true)
@@ -129,6 +168,13 @@ const NLIST = filtered_power_set([1, 2, 3], 0, 2)
 const SLIST = filtered_power_set([(2, 1), (2, 2)], 0, 1)
 
 function microtc_random_configurations(H, ssize;
+        del_diac::AbstractVector=[true],
+        del_dup::AbstractVector=[false],
+        del_punc::AbstractVector=[false],
+        group_num::AbstractVector=[true],
+        group_url::AbstractVector=[true],
+        group_usr::AbstractVector=[false],
+        group_emo::AbstractVector=[false],
         qlist::AbstractVector=QLIST,
         nlist::AbstractVector=NLIST,
         slist::AbstractVector=SLIST,
@@ -171,13 +217,32 @@ function microtc_random_configurations(H, ssize;
 
         kind_ = rand(kind)
         vkind_ = vkind isa Dict ? rand(vkind[kind_]) : rand(vkind)
+        smooth_ = kind_ == EntModel ? Float64(rand(smooth)) : 0.0
 
-        config = μTC_Configuration{kind_,vkind_}(
-            rand(p),
-            _rand_list(qlist), _rand_list(nlist), _rand_list(slist),
-            kind_, vkind_, rand(kernel), rand(dist), k_,
-            rand(smooth), ncenters_, maxiters_,
-            rand(recall), weights_, initial_clusters_, split_entropy_
+        config = μTC_Configuration(
+            p = rand(p),
+            del_diac = rand(del_diac),
+            del_dup = rand(del_dup),
+            del_punc = rand(del_punc),
+            group_num = rand(group_num),
+            group_url = rand(group_url),
+            group_usr = rand(group_usr),
+            group_emo = rand(group_emo),
+            qlist = _rand_list(qlist),
+            nlist = _rand_list(nlist),
+            slist = _rand_list(slist),
+            kind = kind_,
+            vkind = vkind_,
+            kernel = rand(kernel),
+            dist = rand(dist),
+            k = k_,
+            smooth = smooth_,
+            ncenters = ncenters_,
+            maxiters = maxiters_,
+            recall = rand(recall),
+            weights = weights_,
+            initial_clusters = initial_clusters_,
+            split_entropy = split_entropy_
         )
         haskey(H, config) && continue
         H[config] = -1
@@ -202,12 +267,30 @@ function microtc_combine_configurations(config_list, ssize, H)
         qlist_, nlist_, slist_ = _sel().qlist, _sel().nlist, _sel().slist
         length(qlist_) + length(nlist_) + length(slist_) == 0 && continue
         
-        config = μTC_Configuration{kind_, vkind_}(
-            _sel().p,
-            qlist_, nlist_, slist_,
-            kind_, vkind_, _sel().kernel, _sel().dist, b.k,
-            _sel().smooth, b.ncenters, b.maxiters,
-            _sel().recall, b.weights, b.initial_clusters, b.split_entropy
+        config = μTC_Configuration(
+            p = _sel().p,
+            del_diac = _sel().del_diac,
+            del_dup = _sel().del_dup,
+            del_punc = _sel().del_punc,
+            group_num = _sel().group_num,
+            group_url = _sel().group_url,
+            group_usr = _sel().group_usr,
+            group_emo = _sel().group_emo,
+            qlist = qlist_,
+            nlist = nlist_,
+            slist = slist_,
+            kind = kind_,
+            vkind = vkind_,
+            kernel = _sel().kernel,
+            dist = _sel().dist,
+            k = b.k,
+            smooth = _sel().smooth,
+            ncenters = b.ncenters,
+            maxiters = b.maxiters,
+            recall = _sel().recall,
+            weights = b.weights,
+            initial_clusters = b.initial_clusters,
+            split_entropy = b.split_entropy
         )
         haskey(H, config) && continue
         H[config] = -1
