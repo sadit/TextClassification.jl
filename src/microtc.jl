@@ -196,7 +196,7 @@ function microtc_combine_configurations(config_list, ssize, H)
         kind_ = a.kind
         #vkind_ = a.vkind
         a2 = _sel()
-        vkind_ = kind_ == a.kind ? a2.vkind : a.vkind
+        vkind_ = kind_ == a2.kind ? a2.vkind : a.vkind
 
         b = _sel()
         qlist_, nlist_, slist_ = _sel().qlist, _sel().nlist, _sel().slist
