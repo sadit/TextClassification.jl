@@ -206,18 +206,17 @@ function microtc_random_configurations(H, ssize;
             split_entropy_ = 0.0
             initial_clusters_ = :rand # nothing in fact
             k_ = 1
-            weights_ = rand(weights)
         else
             maxiters_ = rand(maxiters)
             split_entropy_ = rand(split_entropy)
             initial_clusters_ = rand(initial_clusters)
             k_ = rand(k)
-            weights_ = nothing
         end
 
         kind_ = rand(kind)
         vkind_ = vkind isa Dict ? rand(vkind[kind_]) : rand(vkind)
         smooth_ = kind_ == EntModel ? Float64(rand(smooth)) : 0.0
+        weights_ = kind_ == EntModel ? rand(weights) : :balance
 
         config = μTC_Configuration(
             p = rand(p),
@@ -262,6 +261,7 @@ function microtc_combine_configurations(config_list, ssize, H)
         #vkind_ = a.vkind
         a2 = _sel()
         vkind_ = kind_ == a2.kind ? a2.vkind : a.vkind
+        weights_ = kind_ == a2.kind ? a2.weights : a.weights
 
         b = _sel()
         qlist_, nlist_, slist_ = _sel().qlist, _sel().nlist, _sel().slist
@@ -288,7 +288,7 @@ function microtc_combine_configurations(config_list, ssize, H)
             ncenters = b.ncenters,
             maxiters = b.maxiters,
             recall = _sel().recall,
-            weights = b.weights,
+            weights = weights_,
             initial_clusters = b.initial_clusters,
             split_entropy = b.split_entropy
         )
