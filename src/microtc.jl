@@ -344,8 +344,8 @@ function microtc_search_params(corpus, y, configurations;
             push!(S, [])
             
             for (itrain, itest) in folds
-                #perf = @spawn evaluate_model(config, corpus[itrain], y[itrain], corpus[itest], y[itest])
-                perf = evaluate_model(config, corpus[itrain], y[itrain], corpus[itest], y[itest])
+                perf = @spawn evaluate_model(config, corpus[itrain], y[itrain], corpus[itest], y[itest])
+                #perf = evaluate_model(config, corpus[itrain], y[itrain], corpus[itest], y[itest])
                 push!(S[end], perf)
             end
         
