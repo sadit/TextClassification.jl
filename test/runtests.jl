@@ -11,10 +11,11 @@ using Test, TextClassification, StatsBase
     y = label2ind.(labels, le)
     corpus = X.text
     best_list = microtc_search_params(
-        corpus, y, 8;
+        corpus, y, 16;
         # search hyper-parameters
-        tol=0.001, search_maxiters=5, folds=3, verbose=true,
+        tol=0.01, search_maxiters=3, folds=3, verbose=true,
         # configuration space
+        ncenters=[0],
         qlist=filtered_power_set([3, 5], 1, 2),
         nlist=filtered_power_set([1, 2], 0, 1),
         slist=[],

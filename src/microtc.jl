@@ -142,7 +142,7 @@ function microtc_random_configurations(H, ssize;
         kind::AbstractVector=[EntModel, VectorModel],
         vkind=Dict(EntModel => [EntModel, EntTpModel, EntTpModel], VectorModel => [TfModel, IdfModel, TfidfModel, FreqModel]),
         ncenters::AbstractVector=[0, 10],
-        weights::AbstractVector=[:balance],
+        weights::AbstractVector=[:balance, nothing],
         initial_clusters::AbstractVector=[:fft, :dnet, :rand],
         split_entropy::AbstractVector=[0.3, 0.6, 0.9],
         verbose=true
@@ -160,25 +160,24 @@ function microtc_random_configurations(H, ssize;
             split_entropy_ = 0.0
             initial_clusters_ = :rand # nothing in fact
             k_ = 1
+            weights_ = rand(weights)
         else
             maxiters_ = rand(maxiters)
             split_entropy_ = rand(split_entropy)
             initial_clusters_ = rand(initial_clusters)
             k_ = rand(k)
+            weights_ = nothing
         end
 
         kind_ = rand(kind)
-        if vkind isa Dict
-            vkind_ = vkind[kind_] |> rand
-        else
-            vkind_ = rand(vkind)
-        end
-        
+        vkind_ = vkind isa Dict ? rand(vkind[kind_]) : rand(vkind)
+
         config = μTC_Configuration{kind_,vkind_}(
-            rand(p), _rand_list(qlist), _rand_list(nlist), _rand_list(slist),
+            rand(p),
+            _rand_list(qlist), _rand_list(nlist), _rand_list(slist),
             kind_, vkind_, rand(kernel), rand(dist), k_,
             rand(smooth), ncenters_, maxiters_,
-            rand(recall), rand(weights), initial_clusters_, split_entropy_
+            rand(recall), weights_, initial_clusters_, split_entropy_
         )
         haskey(H, config) && continue
         H[config] = -1
@@ -195,7 +194,9 @@ function microtc_combine_configurations(config_list, ssize, H)
     for i in 1:ssize
         a = _sel()
         kind_ = a.kind
-        vkind_ = a.vkind
+        #vkind_ = a.vkind
+        a2 = _sel()
+        vkind_ = kind_ == a.kind ? a2.vkind : a.vkind
 
         b = _sel()
         qlist_, nlist_, slist_ = _sel().qlist, _sel().nlist, _sel().slist
@@ -206,7 +207,7 @@ function microtc_combine_configurations(config_list, ssize, H)
             qlist_, nlist_, slist_,
             kind_, vkind_, _sel().kernel, _sel().dist, b.k,
             _sel().smooth, b.ncenters, b.maxiters,
-            _sel().recall, _sel().weights, b.initial_clusters, b.split_entropy
+            _sel().recall, b.weights, b.initial_clusters, b.split_entropy
         )
         haskey(H, config) && continue
         H[config] = -1
@@ -260,8 +261,8 @@ function microtc_search_params(corpus, y, configurations;
             push!(S, [])
             
             for (itrain, itest) in folds
-                perf = @spawn evaluate_model(config, corpus[itrain], y[itrain], corpus[itest], y[itest])
-                #perf = evaluate_model(config, corpus[itrain], y[itrain], corpus[itest], y[itest])
+                #perf = @spawn evaluate_model(config, corpus[itrain], y[itrain], corpus[itest], y[itest])
+                perf = evaluate_model(config, corpus[itrain], y[itrain], corpus[itest], y[itest])
                 push!(S[end], perf)
             end
         
