@@ -1,5 +1,6 @@
 # This file is a part of TextSearch.jl
 # License is Apache 2.0: https://www.apache.org/licenses/LICENSE-2.0.txt
+
 using SimilaritySearch, KCenters, TextSearch, MLDataUtils
 using Distributed, IterTools, Random, StatsBase
 import TextSearch: vectorize
@@ -37,6 +38,7 @@ struct μTC_Configuration{Kind,VKind}
     weights
     initial_clusters
     split_entropy::Float64
+    minimum_elements_per_centroid::Int
 end
 
 function μTC_Configuration(;
@@ -67,7 +69,8 @@ function μTC_Configuration(;
         recall::AbstractFloat=1.0,
         weights=:balance,
         initial_clusters=:rand,
-        split_entropy::AbstractFloat=0.9)
+        split_entropy::AbstractFloat=0.9,
+        minimum_elements_per_centroid=3)
     
     μTC_Configuration(
         p,
@@ -76,7 +79,7 @@ function μTC_Configuration(;
         qlist, nlist, convert(Vector{Tuple{Int,Int}}, slist),
         kind, vkind, kernel, dist,
         k, smooth, ncenters, maxiters,
-        recall, weights, initial_clusters, split_entropy)
+        recall, weights, initial_clusters, split_entropy, minimum_elements_per_centroid)
 end
 
 hash(a::μTC_Configuration) = hash(repr(a))
@@ -136,7 +139,12 @@ function fit(::Type{μTC}, config::μTC_Configuration{Kind,VKind}, train_corpus,
         cls = fit(NearestCentroid, C)
     else
         C = kcenters(config.dist, train_X, config.ncenters, TextSearch.centroid, initial=config.initial_clusters, recall=config.recall, verbose=verbose, maxiters=config.maxiters)
-        cls = fit(NearestCentroid, cosine_distance, C, train_X, train_y, TextSearch.centroid, split_entropy=config.split_entropy, verbose=verbose)
+        cls = fit(
+            NearestCentroid, cosine_distance, C, train_X, train_y,
+            TextSearch.centroid,
+            split_entropy=config.split_entropy,
+            minimum_elements_per_centroid=config.minimum_elements_per_centroid,
+            verbose=verbose)
     end
 
     μTC(cls, model, config, config.kernel(config.dist))
@@ -191,6 +199,7 @@ function microtc_random_configurations(H, ssize;
         weights::AbstractVector=[:balance, nothing],
         initial_clusters::AbstractVector=[:fft, :dnet, :rand],
         split_entropy::AbstractVector=[0.3, 0.6, 0.9],
+        minimum_elements_per_centroid::AbstractVector=[1, 3, 5],
         verbose=true
     )
 
@@ -204,11 +213,13 @@ function microtc_random_configurations(H, ssize;
         if ncenters_ == 0
             maxiters_ = 0
             split_entropy_ = 0.0
+            minimum_elements_per_centroid_ = 1
             initial_clusters_ = :rand # nothing in fact
             k_ = 1
         else
             maxiters_ = rand(maxiters)
             split_entropy_ = rand(split_entropy)
+            minimum_elements_per_centroid_ = rand(minimum_elements_per_centroid)
             initial_clusters_ = rand(initial_clusters)
             k_ = rand(k)
         end
@@ -241,7 +252,8 @@ function microtc_random_configurations(H, ssize;
             recall = rand(recall),
             weights = weights_,
             initial_clusters = initial_clusters_,
-            split_entropy = split_entropy_
+            split_entropy = split_entropy_,
+            minimum_elements_per_centroid = minimum_elements_per_centroid_
         )
         haskey(H, config) && continue
         H[config] = -1
@@ -290,7 +302,8 @@ function microtc_combine_configurations(config_list, ssize, H)
             recall = _sel().recall,
             weights = weights_,
             initial_clusters = b.initial_clusters,
-            split_entropy = b.split_entropy
+            split_entropy = b.split_entropy,
+            minimum_elements_per_centroid = b.minimum_elements_per_centroid,
         )
         haskey(H, config) && continue
         H[config] = -1
