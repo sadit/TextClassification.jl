@@ -6,7 +6,7 @@ using Distributed, IterTools, Random, StatsBase
 import TextSearch: vectorize
 import StatsBase: fit, predict
 import Base: hash, isequal
-export microtc_search_params, microtc_random_configurations, microtc_combine_configurations, filtered_power_set, fit, predict, vectorize, μTC_Configuration
+export microtc_search_params, search_params, random_configurations, combine_configurations, filtered_power_set, fit, predict, vectorize, μTC_Configuration, μTC, MicroTC
 import Base: hash, isequal
 
 struct μTC_Configuration{Kind,VKind}
@@ -92,6 +92,8 @@ mutable struct μTC{Kind,VKind,T}
     kernel::Function
 end
 
+const MicroTC = μTC
+
 function filtered_power_set(set, lowersize=0, uppersize=5)
     lst = collect(subsets(set))
     filter(x -> lowersize <= length(x) <= uppersize, lst)
@@ -164,7 +166,7 @@ function transform(tc::μTC{Kind,VKind}, text) where {Kind,VKind}
 
 end
 
-function evaluate_model(config, train_corpus, train_y, test_corpus, test_y; verbose=true)
+function evaluate_model(config::μTC_Configuration, train_corpus, train_y, test_corpus, test_y; verbose=true)
     mtc = fit(μTC, config, train_corpus, train_y)
     test_X = [vectorize(mtc, text) for text in test_corpus]
     ypred = predict(mtc, test_X)
@@ -175,7 +177,7 @@ const QLIST = filtered_power_set([2, 3, 4, 5, 6], 1, 3)
 const NLIST = filtered_power_set([1, 2, 3], 0, 2)
 const SLIST = filtered_power_set([(2, 1), (2, 2)], 0, 1)
 
-function microtc_random_configurations(H, ssize;
+function random_configurations(::Type{μTC}, H, ssize;
         del_diac::AbstractVector=[true],
         del_dup::AbstractVector=[false],
         del_punc::AbstractVector=[false],
@@ -262,7 +264,7 @@ function microtc_random_configurations(H, ssize;
     H
 end
 
-function microtc_combine_configurations(config_list, ssize, H)
+function combine_configurations(config_list::AbstractVector{μTC_Configuration}, ssize, H)
     function _sel()
         rand(config_list)
     end  
@@ -312,7 +314,7 @@ function microtc_combine_configurations(config_list, ssize, H)
     H
 end
 
-function microtc_search_params(corpus, y, configurations;
+function search_params(::Type{μTC}, corpus, y, configurations;
         bsize=4,
         mutation_bsize=1,
         ssize=8,
@@ -325,7 +327,7 @@ function microtc_search_params(corpus, y, configurations;
     )
     
     if configurations isa Integer
-       configurations = microtc_random_configurations(nothing, configurations; config_kwargs...)
+       configurations = random_configurations(μTC, nothing, configurations; config_kwargs...)
     end
 
     n = length(y)
@@ -388,15 +390,17 @@ function microtc_search_params(corpus, y, configurations;
 
             L =  μTC_Configuration[L[i][1] for i in 1:min(bsize, length(L))]
             if mutation_bsize > 0
-                for p in keys(microtc_random_configurations(nothing, mutation_bsize; config_kwargs...))
+                for p in keys(random_configurations(μTC, nothing, mutation_bsize; config_kwargs...))
                     push!(L, p)
                 end
             end
 
-            microtc_combine_configurations(L, ssize, configurations)
+            combine_configurations(L, ssize, configurations)
             verbose && println(stderr, "finished with $(length(configurations))")
         end
     end
 
     sort!(collect(configurations), by=x->x[2], rev=true)
 end
+
+microtc_search_params(args...; kwargs...) = search_params(MicroTC, args...; kwargs...)
