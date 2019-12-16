@@ -1,12 +1,13 @@
 # This file is a part of TextSearch.jl
 # License is Apache 2.0: https://www.apache.org/licenses/LICENSE-2.0.txt
 
-using SimilaritySearch, KCenters, TextSearch, MLDataUtils
+using SimilaritySearch, KCenters, TextSearch, MLDataUtils, LinearAlgebra
 using Distributed, IterTools, Random, StatsBase
+import KCenters: transform, search_params
 import TextSearch: vectorize
 import StatsBase: fit, predict
 import Base: hash, isequal
-export microtc_search_params, search_params, random_configurations, combine_configurations, filtered_power_set, fit, predict, vectorize, μTC_Configuration, μTC, MicroTC
+export microtc_search_params, search_params, random_configurations, combine_configurations, filtered_power_set, fit, predict, vectorize, transform, μTC_Configuration, μTC, MicroTC
 import Base: hash, isequal
 
 struct μTC_Configuration{Kind,VKind}
@@ -162,8 +163,12 @@ function vectorize(tc::μTC{Kind,VKind}, text) where {Kind,VKind}
     vectorize(tc.model, VKind, text)
 end
 
-function transform(tc::μTC{Kind,VKind}, text) where {Kind,VKind}
+function transform(tc::μTC, vec::DVEC)
+    transform(tc.nc.centers, tc.nc.dmax, tc.kernel, vec)
+end
 
+function transform(tc::μTC, lst::AbstractVector, normalize!::Function=normalize!)
+    [transform(tc.nc.centers, tc.nc.dmax, tc.kernel, vec) for vec in lst]
 end
 
 function evaluate_model(config::μTC_Configuration, train_corpus, train_y, test_corpus, test_y; verbose=true)
