@@ -7,7 +7,7 @@ import KCenters: transform, search_params
 import TextSearch: vectorize
 import StatsBase: fit, predict
 import Base: hash, isequal
-export microtc_search_params, search_params, random_configurations, combine_configurations, filtered_power_set, fit, predict, vectorize, transform, μTC_Configuration, μTC, MicroTC
+export microtc_search_params, search_params, random_configurations, combine_configurations, filtered_power_set, fit, predict, vectorize, transform, μTC_Configuration, μTC, MicroTC, after_load
 import Base: hash, isequal
 
 struct μTC_Configuration{Kind,VKind}
@@ -77,7 +77,7 @@ function μTC_Configuration(;
         p,
         del_diac, del_dup, del_punc,
         group_num, group_url, group_usr, group_emo,
-        qlist, nlist, convert(Vector{Tuple{Int,Int}}, slist),
+        convert(Vector{Int}, qlist), convert(Vector{Int}, nlist), convert(Vector{Tuple{Int,Int}}, slist),
         kind, vkind, kernel, dist,
         k, smooth, ncenters, maxiters,
         recall, weights, initial_clusters, split_entropy, minimum_elements_per_centroid)
@@ -155,6 +155,15 @@ end
 
 fit(config::μTC_Configuration, train_corpus, train_y; verbose=true) = fit(μTC, config, train_corpus, train_y; verbose=verbose)
 
+"""
+    after_load(tc::μTC)
+
+Fixes the `μTC` after loading it from an stored image. In particular, it creates a function composition among distance function and a non-linear function with specific properties. 
+"""
+function after_load(tc::μTC)
+    tc.kernel = tc.config.kernel(tc.config.dist)
+end
+
 function predict(tc::μTC, X)
     ypred = predict(tc.nc, tc.kernel, X, tc.config.k)
 end
@@ -168,7 +177,7 @@ function transform(tc::μTC, vec::DVEC)
 end
 
 function transform(tc::μTC, lst::AbstractVector, normalize!::Function=normalize!)
-    [transform(tc.nc.centers, tc.nc.dmax, tc.kernel, vec) for vec in lst]
+    [normalize!(transform(tc.nc.centers, tc.nc.dmax, tc.kernel, vec)) for vec in lst]
 end
 
 function evaluate_model(config::μTC_Configuration, train_corpus, train_y, test_corpus, test_y; verbose=true)
@@ -371,12 +380,12 @@ function search_params(::Type{μTC}, corpus, y, configurations;
         
             push!(C, config)
         end
-        
-        verbose && println(stderr, "iteration $iter finished")
 
         for (c, perf_list) in zip(C, S)
             configurations[c] = mean([scorefun(fetch(p)) for p in perf_list])
         end
+        
+        verbose && println(stderr, "iteration $iter finished; starting combinations.")
 
         if iter <= search_maxiters
             L = sort!(collect(configurations), by=x->x[2], rev=true)
@@ -401,7 +410,7 @@ function search_params(::Type{μTC}, corpus, y, configurations;
             end
 
             combine_configurations(L, ssize, configurations)
-            verbose && println(stderr, "finished with $(length(configurations))")
+            verbose && println(stderr, "finished with $(length(configurations)) configurations")
         end
     end
 
