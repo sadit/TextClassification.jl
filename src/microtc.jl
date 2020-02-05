@@ -382,6 +382,7 @@ function search_params(::Type{μTC}, corpus, y, configurations;
             
             for (itrain, itest) in folds
                 perf = @spawn evaluate_model(config, corpus[itrain], y[itrain], corpus[itest], y[itest])
+                #perf = evaluate_model(config, corpus[itrain], y[itrain], corpus[itest], y[itest])
 
                 push!(S[end], perf)
             end
