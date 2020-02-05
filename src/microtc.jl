@@ -1,4 +1,4 @@
-# This file is a part of TextSearch.jl
+# This file is a part of TextClassification.jl
 # License is Apache 2.0: https://www.apache.org/licenses/LICENSE-2.0.txt
 
 using SimilaritySearch, KCenters, TextSearch, MLDataUtils, LinearAlgebra
@@ -32,6 +32,7 @@ struct μTC_Configuration{Kind,VKind}
     
     k::Int
     smooth::Float64
+	minocc::Int
     ncenters::Int
     maxiters::Int
     
@@ -64,6 +65,7 @@ function μTC_Configuration(;
         
         k::Int=1,
         smooth::AbstractFloat=3.0,
+		minocc::Integer=1,
         ncenters::Integer=0,
         maxiters::Integer=1,
         
@@ -79,7 +81,7 @@ function μTC_Configuration(;
         group_num, group_url, group_usr, group_emo,
         convert(Vector{Int}, qlist), convert(Vector{Int}, nlist), convert(Vector{Tuple{Int,Int}}, slist),
         kind, vkind, kernel, dist,
-        k, smooth, ncenters, maxiters,
+        k, smooth, minocc, ncenters, maxiters,
         recall, weights, initial_clusters, split_entropy, minimum_elements_per_centroid)
 end
 
@@ -116,7 +118,7 @@ function create_textconfig(config::μTC_Configuration)
 end
 
 function create_textmodel(config::μTC_Configuration{EntModel,VKind}, train_corpus, train_y) where VKind
-    model = fit(EntModel, create_textconfig(config), train_corpus, train_y, smooth=config.smooth, weights=config.weights)
+    model = fit(EntModel, create_textconfig(config), train_corpus, train_y, smooth=config.smooth, minocc=config.minocc, weights=config.weights)
     if config.p < 1.0
         model = prune_select_top(model, config.p)
     end
@@ -125,7 +127,8 @@ function create_textmodel(config::μTC_Configuration{EntModel,VKind}, train_corp
 end
 
 function create_textmodel(config::μTC_Configuration{VectorModel,VKind}, train_corpus, train_y) where VKind
-    model = fit(VectorModel, create_textconfig(config), train_corpus)
+    model = fit(VectorModel, create_textconfig(config), train_corpus,
+		minocc=config.minocc)
     if config.p < 1.0
         model = prune_select_top(model, config.p)
     end
@@ -206,6 +209,7 @@ function random_configurations(::Type{μTC}, H, ssize;
         dist::AbstractVector=[cosine_distance],
         k::AbstractVector=[1],
         smooth::AbstractVector=[0, 1, 3],
+		minocc::AbstractVector=[1, 3, 7],
         p::AbstractVector=[1.0],
         maxiters::AbstractVector=[1, 3, 10],
         recall::AbstractVector=[1.0],
@@ -220,7 +224,9 @@ function random_configurations(::Type{μTC}, H, ssize;
     )
 
     _rand_list(lst) = length(lst) == 0 ? [] : rand(lst)
-
+	if smooth == [0, 1, 2]
+		error("smooth configurations were not set!!!, $smooth")
+	end
     H = H === nothing ? Dict{μTC_Configuration,Float64}() : H
     iter = 0
     for i in 1:ssize
@@ -263,6 +269,7 @@ function random_configurations(::Type{μTC}, H, ssize;
             dist = rand(dist),
             k = k_,
             smooth = smooth_,
+			minocc = rand(minocc),
             ncenters = ncenters_,
             maxiters = maxiters_,
             recall = rand(recall),
@@ -313,6 +320,7 @@ function combine_configurations(config_list::AbstractVector{μTC_Configuration},
             dist = _sel().dist,
             k = b.k,
             smooth = _sel().smooth,
+			minocc = _sel().minocc,
             ncenters = b.ncenters,
             maxiters = b.maxiters,
             recall = _sel().recall,
@@ -374,7 +382,7 @@ function search_params(::Type{μTC}, corpus, y, configurations;
             
             for (itrain, itest) in folds
                 perf = @spawn evaluate_model(config, corpus[itrain], y[itrain], corpus[itest], y[itest])
-                #perf = evaluate_model(config, corpus[itrain], y[itrain], corpus[itest], y[itest])
+
                 push!(S[end], perf)
             end
         
@@ -385,21 +393,22 @@ function search_params(::Type{μTC}, corpus, y, configurations;
             configurations[c] = mean([scorefun(fetch(p)) for p in perf_list])
         end
         
-        verbose && println(stderr, "iteration $iter finished; starting combinations.")
+        verbose && println(stderr, "*** iteration $iter finished; starting combinations.")
 
         if iter <= search_maxiters
             L = sort!(collect(configurations), by=x->x[2], rev=true)
             curr = L[1][2]
             if abs(curr - prev) <= tol                
-                verbose && println(stderr, "stopping on iteration $iter due to a possible convergence ($curr ≃ $prev, tol: $tol)")
+                verbose && println(stderr, "*** stopping on iteration $iter due to a possible convergence ($curr ≃ $prev, tol: $tol)")
                 break
             end
 
             prev = curr
             if verbose
-                println(stderr, "generating $ssize configurations using top $bsize configurations, starting with $(length(configurations)))")
-                println(stderr, [l[end] for l in L])
-                println(stderr, L[1])
+                println(stderr, "*** generating $ssize configurations using top $bsize configurations, starting with $(length(configurations)))")
+                println(stderr, "*** scores: ", [l[end] for l in L])
+				config__, score__ = L[1]
+                println(stderr, "*** best config with score $score__: ", [(k => getfield(config__, k)) for k in fieldnames(typeof(config__))])
             end
 
             L =  μTC_Configuration[L[i][1] for i in 1:min(bsize, length(L))]
@@ -410,7 +419,7 @@ function search_params(::Type{μTC}, corpus, y, configurations;
             end
 
             combine_configurations(L, ssize, configurations)
-            verbose && println(stderr, "finished with $(length(configurations)) configurations")
+            verbose && println(stderr, "*** finished with $(length(configurations)) configurations")
         end
     end
 
