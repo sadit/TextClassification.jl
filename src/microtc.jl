@@ -60,7 +60,7 @@ function μTC_Configuration(;
         
         kind::Type=EntModel,
         vkind::Type=EntModel,
-        kernel::Function=relu_kernel, # [gaussian_kernel, laplacian_kernel, sigmoid_kernel, relu_kernel]
+        kernel::Function=direct_kernel, # [gaussian_kernel, laplacian_kernel, sigmoid_kernel, relu_kernel]
         dist::Function=cosine_distance,
         
         k::Int=1,
