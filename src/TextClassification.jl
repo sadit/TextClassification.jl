@@ -5,4 +5,5 @@
 module TextClassification
 
 include("microtc.jl")
+include("multi.jl")
 end # module

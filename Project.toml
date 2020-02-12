@@ -4,6 +4,8 @@ authors = ["Eric S. Tellez <donsadit@gmail.com>"]
 version = "0.2.1"
 
 [deps]
+CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 IterTools = "c8e1da08-722c-5040-9ed9-7db0dc04731e"
 KCenters = "5d8de97f-65f8-4dd6-a15b-0f89c36a43ce"
@@ -16,11 +18,11 @@ TextSearch = "7f6f6c8a-3b03-11e9-223d-e7d88259bd6c"
 
 [compat]
 IterTools = "1.3.0"
-KCenters = "0.1.12"
+KCenters = "0.1.13"
 MLDataUtils = "0.5.0"
 SimilaritySearch = "0.3.19"
 StatsBase = "0.30.0, 0.32.0"
-TextSearch = "0.3.4"
+TextSearch = "0.3.5"
 julia = "0.7, 1"
 
 [extras]

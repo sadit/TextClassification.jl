@@ -10,7 +10,7 @@ import Base: hash, isequal
 export microtc_search_params, search_params, random_configurations, combine_configurations, filtered_power_set, fit, predict, vectorize, transform, μTC_Configuration, μTC, MicroTC, after_load
 import Base: hash, isequal
 
-struct μTC_Configuration{Kind,VKind}
+mutable struct μTC_Configuration{Kind,VKind}
     p::Float64
 
     del_diac::Bool
@@ -95,6 +95,10 @@ mutable struct μTC{Kind,VKind,T}
     kernel::Function
 end
 
+function broadcastable(tc::μTC)
+    (tc,)
+end
+
 const MicroTC = μTC
 
 function filtered_power_set(set, lowersize=0, uppersize=5)
@@ -127,8 +131,7 @@ function create_textmodel(config::μTC_Configuration{EntModel,VKind}, train_corp
 end
 
 function create_textmodel(config::μTC_Configuration{VectorModel,VKind}, train_corpus, train_y) where VKind
-    model = fit(VectorModel, create_textconfig(config), train_corpus,
-		minocc=config.minocc)
+    model = fit(VectorModel, create_textconfig(config), train_corpus, minocc = config.minocc)
     if config.p < 1.0
         model = prune_select_top(model, config.p)
     end
@@ -137,8 +140,12 @@ function create_textmodel(config::μTC_Configuration{VectorModel,VKind}, train_c
 end
 
 function fit(::Type{μTC}, config::μTC_Configuration{Kind,VKind}, train_corpus, train_y; verbose=true) where {Kind,VKind}
-    model = create_textmodel(config, train_corpus, train_y)
-    train_X = [vectorize(model, config.vkind, text) for text in train_corpus]
+    textmodel = create_textmodel(config, train_corpus, train_y)
+    fit(μTC, config, textmodel, train_corpus, train_y; verbose=verbose)
+end
+
+function fit(::Type{μTC}, config::μTC_Configuration{Kind,VKind}, textmodel::Kind, train_corpus, train_y; verbose=true) where {Kind,VKind}
+    train_X = [vectorize(textmodel, config.vkind, text) for text in train_corpus]
     
     if config.ncenters == 0
         C = kcenters(config.dist, train_X, train_y, TextSearch.centroid)
@@ -153,7 +160,7 @@ function fit(::Type{μTC}, config::μTC_Configuration{Kind,VKind}, train_corpus,
             verbose=verbose)
     end
 
-    μTC(cls, model, config, config.kernel(config.dist))
+    μTC(cls, textmodel, config, config.kernel(config.dist))
 end
 
 fit(config::μTC_Configuration, train_corpus, train_y; verbose=true) = fit(μTC, config, train_corpus, train_y; verbose=verbose)
@@ -167,8 +174,19 @@ function after_load(tc::μTC)
     tc.kernel = tc.config.kernel(tc.config.dist)
 end
 
-function predict(tc::μTC, X)
-    ypred = predict(tc.nc, tc.kernel, X, tc.config.k)
+function predict(tc::μTC, X::AbstractString, k=0)
+    k = k == 0 ? tc.config.k : k
+    predict(tc.nc, tc.kernel, [vectorize(tc, X)], )
+end
+
+function predict(tc::μTC, X::AbstractVector{D}, k=0) where D <: DVEC
+    k = k == 0 ? tc.config.k : k
+    predict(tc.nc, tc.kernel, X, k)
+end
+
+function predict(tc::μTC, X::AbstractVector, k=0)
+    k = k == 0 ? tc.config.k : k
+    predict(tc.nc, tc.kernel, [vectorize(tc, x) for x in X], k)
 end
 
 function vectorize(tc::μTC{Kind,VKind}, text) where {Kind,VKind}
