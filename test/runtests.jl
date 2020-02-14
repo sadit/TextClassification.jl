@@ -21,7 +21,8 @@ using Test, StatsBase, KCenters, TextSearch, TextClassification
         qlist=filtered_power_set([3, 5], 1, 2),
         nlist=filtered_power_set([1, 2], 0, 1),
         slist=[],
-        kind = [EntModel]
+        kind = [EntModel],
+        distributed=false
      )
 
     for (i, b) in enumerate(best_list)

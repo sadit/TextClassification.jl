@@ -29,6 +29,7 @@ mutable struct μTC_Configuration{Kind,VKind}
     vkind::Type{VKind}
     kernel::Function
     dist::Function
+    summary::Function
     
     k::Int
     smooth::Float64
@@ -62,6 +63,7 @@ function μTC_Configuration(;
         vkind::Type=EntModel,
         kernel::Function=direct_kernel, # [gaussian_kernel, laplacian_kernel, sigmoid_kernel, relu_kernel]
         dist::Function=cosine_distance,
+        summary::Function=most_frequent_label,
         
         k::Int=1,
         smooth::AbstractFloat=3.0,
@@ -80,7 +82,7 @@ function μTC_Configuration(;
         del_diac, del_dup, del_punc,
         group_num, group_url, group_usr, group_emo,
         convert(Vector{Int}, qlist), convert(Vector{Int}, nlist), convert(Vector{Tuple{Int,Int}}, slist),
-        kind, vkind, kernel, dist,
+        kind, vkind, kernel, dist, summary,
         k, smooth, minocc, ncenters, maxiters,
         recall, weights, initial_clusters, split_entropy, minimum_elements_per_centroid)
 end
@@ -89,7 +91,7 @@ hash(a::μTC_Configuration) = hash(repr(a))
 isequal(a::μTC_Configuration, b::μTC_Configuration) = isequal(repr(a), repr(b))
 
 mutable struct μTC{Kind,VKind,T}
-    nc::NearestCentroid{T}
+    nc::KNC{T}
     model::Kind
     config::μTC_Configuration{Kind,VKind}
     kernel::Function
@@ -149,11 +151,11 @@ function fit(::Type{μTC}, config::μTC_Configuration{Kind,VKind}, textmodel::Ki
     
     if config.ncenters == 0
         C = kcenters(config.dist, train_X, train_y, TextSearch.centroid)
-        cls = fit(NearestCentroid, C)
+        cls = fit(KNC, C)
     else
         C = kcenters(config.dist, train_X, config.ncenters, TextSearch.centroid, initial=config.initial_clusters, recall=config.recall, verbose=verbose, maxiters=config.maxiters)
         cls = fit(
-            NearestCentroid, cosine_distance, C, train_X, train_y,
+            KNC, cosine_distance, C, train_X, train_y,
             TextSearch.centroid,
             split_entropy=config.split_entropy,
             minimum_elements_per_centroid=config.minimum_elements_per_centroid,
@@ -176,17 +178,17 @@ end
 
 function predict(tc::μTC, X::AbstractString, k=0)
     k = k == 0 ? tc.config.k : k
-    predict(tc.nc, tc.kernel, [vectorize(tc, X)], )
+    predict(tc.nc, tc.kernel, tc.config.summary, [vectorize(tc, X)])
 end
 
 function predict(tc::μTC, X::AbstractVector{D}, k=0) where D <: DVEC
     k = k == 0 ? tc.config.k : k
-    predict(tc.nc, tc.kernel, X, k)
+    predict(tc.nc, tc.kernel, tc.config.summary, X, k)
 end
 
 function predict(tc::μTC, X::AbstractVector, k=0)
     k = k == 0 ? tc.config.k : k
-    predict(tc.nc, tc.kernel, [vectorize(tc, x) for x in X], k)
+    predict(tc.nc, tc.kernel, tc.config.summary, [vectorize(tc, x) for x in X], k)
 end
 
 function vectorize(tc::μTC{Kind,VKind}, text) where {Kind,VKind}
@@ -225,6 +227,7 @@ function random_configurations(::Type{μTC}, H, ssize;
         slist::AbstractVector=SLIST,
         kernel::AbstractVector=[relu_kernel], # [gaussian_kernel, laplacian_kernel, sigmoid_kernel, relu_kernel]
         dist::AbstractVector=[cosine_distance],
+        summary::AbstractVector=[most_frequent_label, mean_label],
         k::AbstractVector=[1],
         smooth::AbstractVector=[0, 1, 3],
 		minocc::AbstractVector=[1, 3, 7],
@@ -285,6 +288,7 @@ function random_configurations(::Type{μTC}, H, ssize;
             vkind = vkind_,
             kernel = rand(kernel),
             dist = rand(dist),
+            summary = rand(summary),
             k = k_,
             smooth = smooth_,
 			minocc = rand(minocc),
@@ -336,6 +340,7 @@ function combine_configurations(config_list::AbstractVector{μTC_Configuration},
             vkind = vkind_,
             kernel = _sel().kernel,
             dist = _sel().dist,
+            summary = _sel().summary,
             k = b.k,
             smooth = _sel().smooth,
 			minocc = _sel().minocc,
@@ -363,6 +368,7 @@ function search_params(::Type{μTC}, corpus, y, configurations;
         score=:macro_recall,
         tol=0.01,
         verbose=true,
+        distributed=true,
         config_kwargs...
     )
     
@@ -397,12 +403,17 @@ function search_params(::Type{μTC}, corpus, y, configurations;
         for (config, score_) in configurations
             score_ >= 0.0 && continue
             push!(S, [])
-            
-            for (itrain, itest) in folds
-                perf = @spawn evaluate_model(config, corpus[itrain], y[itrain], corpus[itest], y[itest])
-                #perf = evaluate_model(config, corpus[itrain], y[itrain], corpus[itest], y[itest])
 
-                push!(S[end], perf)
+            if distributed
+                for (itrain, itest) in folds
+                    perf = @spawn evaluate_model(config, corpus[itrain], y[itrain], corpus[itest], y[itest])
+                    push!(S[end], perf)
+                end
+            else
+                for (itrain, itest) in folds
+                    perf = evaluate_model(config, corpus[itrain], y[itrain], corpus[itest], y[itest])
+                    push!(S[end], perf)
+                end
             end
         
             push!(C, config)
