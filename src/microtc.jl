@@ -153,7 +153,7 @@ function fit(::Type{μTC}, config::μTC_Configuration{Kind,VKind}, textmodel::Ki
         C = kcenters(config.dist, train_X, train_y, TextSearch.centroid)
         cls = fit(KNC, C)
     else
-        C = kcenters(config.dist, train_X, config.ncenters, TextSearch.centroid, initial=config.initial_clusters, recall=config.recall, verbose=verbose, maxiters=config.maxiters)
+        C = kcenters(config.dist, train_X, config.ncenters, TextSearch.centroid, initial=config.initial_clusters, recall=config.recall, verbose=verbose, maxiters=config.maxiters, tol=0.00001)
         cls = fit(
             KNC, cosine_distance, C, train_X, train_y,
             TextSearch.centroid,
@@ -176,31 +176,44 @@ function after_load(tc::μTC)
     tc.kernel = tc.config.kernel(tc.config.dist)
 end
 
-function predict(tc::μTC, X::AbstractString, k=0)
-    k = k == 0 ? tc.config.k : k
-    predict(tc.nc, tc.kernel, tc.config.summary, [vectorize(tc, X)])
-end
-
-function predict(tc::μTC, X::AbstractVector{D}, k=0) where D <: DVEC
-    k = k == 0 ? tc.config.k : k
-    predict(tc.nc, tc.kernel, tc.config.summary, X, k)
-end
-
-function predict(tc::μTC, X::AbstractVector, k=0)
-    k = k == 0 ? tc.config.k : k
-    predict(tc.nc, tc.kernel, tc.config.summary, [vectorize(tc, x) for x in X], k)
-end
-
 function vectorize(tc::μTC{Kind,VKind}, text) where {Kind,VKind}
     vectorize(tc.model, VKind, text)
 end
 
-function transform(tc::μTC, vec::DVEC)
-    transform(tc.nc.centers, tc.nc.dmax, tc.kernel, vec)
+function predict(tc::μTC, vec::DVEC, k=0)
+    k = k == 0 ? tc.config.k : k
+    predict(tc.nc, tc.kernel, tc.config.summary, vec, k)
 end
 
-function transform(tc::μTC, lst::AbstractVector, normalize!::Function=normalize!)
-    [normalize!(transform(tc.nc.centers, tc.nc.dmax, tc.kernel, vec)) for vec in lst]
+function predict(tc::μTC, text::AbstractString, k=0)
+    predict(tc, vectorize(tc, text), k)
+end
+
+function predict(tc::μTC, X::AbstractVector, k=0)
+    [predict(tc, x, k) for x in X]
+end
+
+function transform(tc::μTC, vec::DVEC)
+    X = transform(tc.nc.centers, tc.nc.dmax, tc.kernel, vec)
+    M = labelmap(tc.nc.class_map)
+    L = zeros(Float64, tc.nc.nclasses)
+
+    for i in 1:tc.nc.nclasses
+        lst = get(M, i, nothing)
+        if lst !== nothing
+           L[i] = maximum(X[lst])
+        end
+    end
+
+    L
+end
+
+function transform(tc::μTC, text::AbstractString)
+    transform(tc, vectorize(tc, text))
+end
+
+function transform(tc::μTC, lst::AbstractVector, normalize!::Function=identity)
+    [normalize!(transform(tc, x)) for x in lst]
 end
 
 function evaluate_model(config::μTC_Configuration, train_corpus, train_y, test_corpus, test_y; verbose=true)

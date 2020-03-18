@@ -12,6 +12,7 @@ using Test, StatsBase, KCenters, TextSearch, TextClassification
     corpus = X.text
 
     (Xtrain, ytrain), (Xtest, ytest) = splitobs(shuffleobs((corpus, y)), at=0.7)
+
     best_list = microtc_search_params(
         Xtrain, ytrain, 8;
         # search hyper-parameters
