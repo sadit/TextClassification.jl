@@ -1,7 +1,7 @@
 name = "TextClassification"
 uuid = "8e067cb0-742a-4f90-93f9-f1fa01b385ec"
 authors = ["Eric S. Tellez <donsadit@gmail.com>"]
-version = "0.2.2"
+version = "0.2.3"
 
 [deps]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
@@ -22,7 +22,7 @@ KCenters = "0.2.1"
 MLDataUtils = "0.5.0"
 SimilaritySearch = "0.3.19"
 StatsBase = "0.30.0, 0.32.0"
-TextSearch = "0.3.6"
+TextSearch = "0.3.6, 0.4"
 julia = "0.7, 1"
 
 [extras]
