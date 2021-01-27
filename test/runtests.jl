@@ -1,53 +1,51 @@
-using Test, StatsBase, KCenters, TextSearch, TextClassification
+using Test, StatsBase, KNearestCenters, TextSearch, TextClassification, CategoricalArrays
+
+function train_test_split(corpus, labels, at=0.7)
+    n = length(corpus)
+    iX = shuffle!(collect(1:n))
+    n_ = floor(Int, n * at)
+    itrain, itest = iX[1:n_], iX[n_+1:end]
+    corpus[itrain], labels[itrain], corpus[itest], labels[itest]
+end
 
 @testset "microtc" begin
     !isfile("emotions.csv") && download("http://ingeotec.mx/~sadit/emotions.csv", "emotions.csv")
     using CSV, Random, MLDataUtils
-    X = CSV.read("emotions.csv")
-    L = ["♡", "💔"]
-    X = X[[l in L for l in X.klass], :]
-    labels = X.klass
-    le = labelenc(labels)
-    y = label2ind.(labels, le)
-    corpus = X.text
+    X = CSV.read("emotions.csv", NamedTuple)
+    targets = ["♡", "💔"]
+    I = [(l in targets) for l in X.klass]
+    labels = categorical(X.klass[I])
+    corpus = X.text[I]
 
-    (Xtrain, ytrain), (Xtest, ytest) = splitobs(shuffleobs((corpus, y)), at=0.7)
+    traincorpus, trainlabels, testcorpus, testlabels = train_test_split(corpus, labels, 0.7)
+    @show traincorpus[1:10]
+    @show countmap(trainlabels)
+    @show countmap(testlabels)
 
-    best_list = microtc_search_params(
-        Xtrain, ytrain, 8;
+    space = MicroTC_ConfigSpace(
+        minocc=[1],
+        textconfig=TextConfigSpace(
+            qlist=[[4]],
+            nlist=[[1], []],
+            slist=[]
+        ),
+        akncconfig=AKNC_ConfigSpace(
+            ncenters=[0],
+            dist=[CosineDistance]
+        )
+    )
+
+    best_list = search_params(space, traincorpus, trainlabels, 8;
         # search hyper-parameters
-        tol=0.01, search_maxiters=3, folds=3, verbose=true,
-        # configuration space
-        ncenters=[0],
-        qlist=filtered_power_set([3, 5], 1, 2),
-        nlist=filtered_power_set([1, 2], 0, 1),
-        slist=[],
-        kind = [EntModel],
-        distributed=false
-     )
+        tol=0.01, searchmaxiters=3, folds=3, verbose=true, distributed=false)
 
     for (i, b) in enumerate(best_list)
-        @info i, b[1], b[2]
+        @info "-- perf best_lists[$i]:", i, b[1], b[2]
     end
 
-    cls = fit(μTC, best_list[1][1], Xtrain, ytrain)
-    sc = scores(predict(cls, Xtest), ytest)
+    cls = MicroTC(best_list[1][1], traincorpus, trainlabels)
+    sc = classification_scores(testlabels.refs, [predict(cls, t) for t in testcorpus])
     @info "*** Performance on test: " sc
-    @test sc.accuracy > 0.7
-
-    cls = bagging(best_list[1][1], Xtrain, ytrain; b=15, ratio=0.85)
-    sc = scores(predict(cls, Xtest), ytest)
-    @info "*** Bagging performance on test: " sc
-    @test sc.accuracy > 0.7
-
-    sc = scores(predict(cls, Xtest, 3), ytest)
-    @info "*** Bagging performance on test (k=3): " sc
-    @test sc.accuracy > 0.7
-
-    B = optimize!(cls, Xtest, ytest; verbose=false)
-    @info "best config for optimize!" B[1]
-    sc = scores(predict(cls, Xtest), ytest)
-    @info "*** Bagging performance on test (after calling optimize!): " sc
     @test sc.accuracy > 0.7
 end
 
