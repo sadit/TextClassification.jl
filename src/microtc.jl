@@ -1,7 +1,7 @@
 # This file is a part of TextClassification.jl
 # License is Apache 2.0: https://www.apache.org/licenses/LICENSE-2.0.txt
 
-using SimilaritySearch, KCenters, KNearestCenters, TextSearch, MLDataUtils, LinearAlgebra
+using MLDataUtils, LinearAlgebra
 using Distributed, Random, StatsBase
 import KNearestCenters: transform, search_params, combine_configurations, random_configuration
 import TextSearch: vectorize

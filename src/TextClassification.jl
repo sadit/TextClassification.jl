@@ -2,7 +2,12 @@
 # License is Apache 2.0: https://www.apache.org/licenses/LICENSE-2.0.txt
 
 module TextClassification
-using TextSearch, KNearestCenters
+using SimilaritySearch
+using KCenters
+using KNearestCenters
+using TextSearch
+
+@info BOW
 using CategoricalArrays
 import KNearestCenters: random_configuration, combine_configurations
 
