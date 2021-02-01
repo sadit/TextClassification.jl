@@ -20,9 +20,9 @@ function evaluate_model end
 function search_models(
         configspace::AbstractConfigSpace, corpus, y::CategoricalArray, m=8;
         configurations=Dict{AbstractConfig,Float64}(),
-        bsize=4,
-        mutationbsize=1,
-        ssize=8,
+        bsize=16,
+        mutbsize=4,
+        crossbsize=4,
         folds=0.7,
         searchmaxiters=8,
         score=:macrorecall,
@@ -59,7 +59,7 @@ function search_models(
         C = AbstractConfig[]
         S = []
 
-        verbose && println(stderr, "ModelSelection> ==== search params iter=$iter, tol=$tol, m=$m, bsize=$bsize, mutatioonbsize=$mutationbsize, ssize=$ssize, prev=$prev, $(length(configurations))")
+        verbose && println(stderr, "ModelSelection> ==== search params iter=$iter, tol=$tol, m=$m, bsize=$bsize, mutbsize=$mutbsize, crossbsize=$crossbsize, prev=$prev, $(length(configurations))")
 
         for (config, score_) in configurations
             score_ >= 0.0 && continue
@@ -96,23 +96,27 @@ function search_models(
 
             prev = curr
             if verbose
-                println(stderr, "ModelSelection> *** generating $ssize configurations using top $bsize configurations, starting with $(length(configurations)))")
+                println(stderr, "ModelSelection> *** adding more items to the population: bsize=$bsize; #configurations=$(length(configurations)))")
                 println(stderr, "ModelSelection> *** scores: ", [l[end] for l in L])
 				config__, score__ = L[1]
                 println(stderr, "ModelSelection> *** best config with score $score__: ", [(k => getfield(config__, k)) for k in fieldnames(typeof(config__))])
             end
 
             L =  AbstractConfig[L[i][1] for i in 1:min(bsize, length(L))]
-            for i in 1:mutationbsize
-                push!(L, random_configuration(configspace))
+            for i in 1:mutbsize
+                conf = combine_configurations(configspace, [rand(L), random_configuration(configspace)])
+                if !haskey(configurations, conf)
+                    configurations[conf] = -1.0
+                end
             end
 
-            for i in 1:ssize
+            for i in 1:crossbsize
                 conf = combine_configurations(configspace, L)
                 if !haskey(configurations, conf)
                     configurations[conf] = -1.0
                 end
             end
+
             verbose && println(stderr, "ModelSelection> *** finished with $(length(configurations)) configurations")
         end
     end

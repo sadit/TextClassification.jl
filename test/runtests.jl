@@ -30,7 +30,8 @@ end
             nlist=[[1], []],
             slist=[]
         ),
-        ncenters=[0]
+        ncenters=[0],
+        centerselection=[CentroidSelection()]
     )
 
     best_list = search_models(space, traincorpus, trainlabels, 8;

@@ -12,7 +12,7 @@ const QLIST = filtered_power_set([2, 3, 4, 5, 6], 1, 3)
 const NLIST = filtered_power_set([1, 2, 3], 0, 2)
 const SLIST = [[Skipgram(2, 1), Skipgram(2, 2)], [Skipgram(2, 1)], [Skipgram(2, 2)], Skipgram[]]
 
-struct TextConfigSpace
+struct TextConfigSpace <: AbstractConfig
     del_diac::Vector{Bool}
     del_dup::Vector{Bool}
     del_punc::Vector{Bool}
@@ -58,7 +58,7 @@ function random_configuration(space::TextConfigSpace)
     )
 end
 
-function combine_configurations(config_list::AbstractVector{TextConfig})
+function combine_configurations(space::TextConfigSpace, config_list::AbstractVector{TextConfig})
     _sel() = rand(config_list)
 
     TextConfig(

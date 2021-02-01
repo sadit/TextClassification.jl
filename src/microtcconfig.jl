@@ -131,7 +131,7 @@ function combine_configurations(space::MicroTC_ConfigSpace, config_list)
     _sel() = rand(config_list)
     a = _sel()
     MicroTC_Config(
-        textconfig=combine_configurations(TextConfig[c.textconfig for c in config_list]),
+        textconfig=combine_configurations(space.textconfig, TextConfig[c.textconfig for c in config_list]),
         textmodel=a.textmodel,
         weighting=a.weighting,
         classweights=_sel().classweights,
