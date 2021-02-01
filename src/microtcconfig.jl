@@ -2,12 +2,11 @@
 # License is Apache 2.0: https://www.apache.org/licenses/LICENSE-2.0.txt
 export MicroTC_Config, MicroTC_ConfigSpace, AKNC_ConfigSpace, TextConfigSpace
 
-
-struct MicroTC_Config{TextConfig_<:TextConfig, TextModel_<:TextModel, WeightingType_<:WeightingType}
-    textconfig::TextConfig_
-    textmodel::Type{TextModel_}
-    weighting::Type{WeightingType_}
-    akncconfig::AKNC_Config
+struct MicroTC_Config{WeightingType_<:WeightingType, Config_<:AKNC_Config} <: AbstractConfig
+    textconfig::TextConfig
+    textmodel::Symbol
+    weighting::WeightingType_
+    akncconfig::Config_
 
     p::Float64
     smooth::Float64
@@ -15,10 +14,12 @@ struct MicroTC_Config{TextConfig_<:TextConfig, TextModel_<:TextModel, WeightingT
     classweights::Symbol
 end
 
+StructTypes.StructType(::Type{<:MicroTC_Config}) = StructTypes.Struct()
+
 function MicroTC_Config(;
         textconfig::TextConfig=TextConfig(),
-        textmodel::Type=EntModel,
-        weighting::Type=EntWeighting,
+        textmodel::Symbol=:EntModel,
+        weighting::WeightingType=EntTpWeighting(),
         akncconfig::AKNC_Config=AKNC_Config(),
         p::Real=1.0,
         smooth::AbstractFloat=3.0,
@@ -41,13 +42,10 @@ Base.copy(c::MicroTC_Config;
         classweights=c.classweights
     ) = MicroTC_Config(textconfig, textmodel, weighting, akncconfig, p, smooth, minocc, classweights)
 
-Base.hash(a::MicroTC_Config) = hash(repr(a))
-Base.isequal(a::MicroTC_Config, b::MicroTC_Config) = isequal(repr(a), repr(b))
-
-struct MicroTC_ConfigSpace
-    textmodel::Vector
+struct MicroTC_ConfigSpace <: AbstractConfigSpace
+    textmodel::Vector{Symbol}
     weighting::Dict
-    classweights::Vector
+    classweights::Vector{Symbol}
     textconfig::TextConfigSpace
     akncconfig::AKNC_ConfigSpace
     p::Vector
@@ -67,13 +65,39 @@ Base.copy(s::MicroTC_ConfigSpace;
     ) = MicroTC_ConfigSpace(textmodel, weigthing, classweights, textconfig, akncconfig, p, smooth, minocc)
 
 function MicroTC_ConfigSpace(;
-        textmodel::Vector = [EntModel, VectorModel],
+        textmodel::Vector = [:EntModel, :VectorModel],
         weighting::Dict = Dict(
-            EntModel => [EntWeighting, EntTpWeighting, EntTpWeighting],
-            VectorModel => [TfWeighting, IdfWeighting, TfidfWeighting, FreqWeighting]),
+            :EntModel => [EntWeighting(), EntTpWeighting(), EntTpWeighting()],
+            :VectorModel => [TfWeighting(), IdfWeighting(), TfidfWeighting(), FreqWeighting()]
+        ),
         classweights::Vector = [:balance, :none],
         textconfig::TextConfigSpace = TextConfigSpace(),
-        akncconfig::AKNC_ConfigSpace = AKNC_ConfigSpace(),
+
+        centerselection=[
+            CentroidSelection(),
+            # RandomCenterSelection(),
+            MedoidSelection(dist=CosineDistance()),
+            KnnCentroidSelection(sel=CentroidSelection(), dist=CosineDistance())
+        ],
+        kernel=[k_(CosineDistance()) for k_ in [DirectKernel, ReluKernel]],
+        k::Vector=[1],
+        maxiters::Vector=[1, 3, 10],
+        recall::Vector=[1.0],
+        ncenters::Vector=[0, 7],
+        initial_clusters::Vector=[:fft, :dnet, :rand],
+        split_entropy::Vector=[0.3, 0.6, 0.9],
+        minimum_elements_per_region::Vector=[1, 3, 5],
+        akncconfig::AKNC_ConfigSpace = AKNC_ConfigSpace(
+            centerselection=centerselection,
+            kernel=kernel,
+            k=k,
+            maxiters=maxiters,
+            recall=recall,
+            ncenters=ncenters,
+            initial_clusters=initial_clusters,
+            split_entropy=split_entropy,
+            minimum_elements_per_region=minimum_elements_per_region
+        ),
         p::Vector{Float64} = [1.0],
         smooth::Vector = [0, 1, 3],
         minocc::Vector = [1, 3, 7]
@@ -84,11 +108,14 @@ end
 
 function random_configuration(space::MicroTC_ConfigSpace)
     textmodel = rand(space.textmodel)
-    weighting = rand(space.weighting[textmodel])
-    smooth = textmodel == EntModel ? Float64(rand(space.smooth)) : 0.0
-    classweights = textmodel == EntModel ? rand(space.classweights) : :balance
+    weighting = rand(space.weighting[textmodel])    
+    smooth, classweights = if textmodel == :EntModel
+        Float64(rand(space.smooth)), rand(space.classweights)
+    else
+        0.0, :balance
+    end
 
-    MicroTC_Config(
+    MicroTC_Config(;
         textconfig=random_configuration(space.textconfig),
         textmodel=textmodel,
         weighting=weighting,
@@ -100,7 +127,7 @@ function random_configuration(space::MicroTC_ConfigSpace)
     )
 end
 
-function combine_configurations(config_list::AbstractVector{MicroTC_Config})
+function combine_configurations(space::MicroTC_ConfigSpace, config_list)
     _sel() = rand(config_list)
     a = _sel()
     MicroTC_Config(
@@ -113,4 +140,22 @@ function combine_configurations(config_list::AbstractVector{MicroTC_Config})
         smooth=_sel().smooth,
 		minocc=_sel().minocc
     )
+end
+
+function evaluate_model(
+        config::MicroTC_Config,
+        train_corpus::AbstractVector{String},
+        train_y::CategoricalArray,
+        test_corpus::AbstractVector{String},
+        test_y::CategoricalArray;
+        verbose=true
+    )
+    tc = MicroTC(config, train_corpus, train_y; verbose=verbose)
+    test_X = [vectorize(tc, text) for text in test_corpus]
+    ypred = [predict(tc, x) for x in test_X]
+    s = classification_scores(test_y.refs, ypred)
+    if verbose
+        println(stderr, "MicroTC> gold:", typeof(test_y), ", ypred:", typeof(ypred), "-- scores:", s)
+    end
+    (scores=s, voc=length(tc.textmodel.tokens))
 end

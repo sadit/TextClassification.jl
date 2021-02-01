@@ -1,4 +1,5 @@
-using Test, StatsBase, KNearestCenters, TextSearch, TextClassification, CategoricalArrays
+using Test, StatsBase, KCenters, KNearestCenters, TextSearch, TextClassification, CategoricalArrays
+using CSV, Random, MLDataUtils, JSON3
 
 function train_test_split(corpus, labels, at=0.7)
     n = length(corpus)
@@ -10,7 +11,7 @@ end
 
 @testset "microtc" begin
     !isfile("emotions.csv") && download("http://ingeotec.mx/~sadit/emotions.csv", "emotions.csv")
-    using CSV, Random, MLDataUtils
+    
     X = CSV.read("emotions.csv", NamedTuple)
     targets = ["♡", "💔"]
     I = [(l in targets) for l in X.klass]
@@ -29,13 +30,10 @@ end
             nlist=[[1], []],
             slist=[]
         ),
-        akncconfig=AKNC_ConfigSpace(
-            ncenters=[0],
-            dist=[CosineDistance]
-        )
+        ncenters=[0]
     )
 
-    best_list = search_params(space, traincorpus, trainlabels, 8;
+    best_list = search_models(space, traincorpus, trainlabels, 8;
         # search hyper-parameters
         tol=0.01, searchmaxiters=3, folds=3, verbose=true, distributed=false)
 
@@ -46,7 +44,13 @@ end
     cls = MicroTC(best_list[1][1], traincorpus, trainlabels)
     sc = classification_scores(testlabels.refs, [predict(cls, t) for t in testcorpus])
     @info "*** Performance on test: " sc
-    @test sc.accuracy > 0.7
+    @test sc.accuracy > 0.6
+
+    cls_ = JSON3.read(JSON3.write(cls), typeof(cls))
+    sc = classification_scores(testlabels.refs, [predict(cls_, t) for t in testcorpus])
+    @info "*** Performance on test: " sc
+    @test sc.accuracy > 0.6
+
 end
 
 

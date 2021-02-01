@@ -4,13 +4,15 @@
 module TextClassification
 using SimilaritySearch
 using KCenters
+using StructTypes
 using KNearestCenters
 using TextSearch
 
-@info BOW
 using CategoricalArrays
 import KNearestCenters: random_configuration, combine_configurations
 
+include("modelselection.jl")
+include("centerselection.jl")
 include("textconfigspace.jl")
 include("microtcconfig.jl")
 include("microtc.jl")

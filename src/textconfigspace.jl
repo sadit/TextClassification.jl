@@ -26,6 +26,8 @@ struct TextConfigSpace
     slist::Vector{Vector{Skipgram}}
 end
 
+StructTypes.StructType(::Type{TextConfigSpace}) = StructTypes.Struct()
+
 TextConfigSpace(;
     del_diac::Vector=[true],
     del_dup::Vector=[false],
