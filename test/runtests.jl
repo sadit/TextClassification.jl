@@ -9,6 +9,14 @@ function train_test_split(corpus, labels, at=0.7)
     corpus[itrain], labels[itrain], corpus[itest], labels[itest]
 end
 
+function folds_split(corpus, labels, folds=3)
+    n = length(corpus)
+    indexes = shuffle!(collect(1:n))
+    folds = kfolds(indexes, folds)
+
+    [(corpus[itrain], labels[itrain], corpus[itest], labels[itest]) for (itrain, itest) in folds]
+end
+
 @testset "microtc" begin
     !isfile("emotions.csv") && download("http://ingeotec.mx/~sadit/emotions.csv", "emotions.csv")
     
@@ -19,24 +27,43 @@ end
     corpus = X.text[I]
 
     traincorpus, trainlabels, testcorpus, testlabels = train_test_split(corpus, labels, 0.7)
-    @show traincorpus[1:10]
+    folds = folds_split(traincorpus, trainlabels)
+
+    function evaluate_model(config::MicroTC_Config)
+        S = Float64[]
+        for (_traincorpus, _trainlabels, _testcorpus, _testlabels) in folds
+            tc = MicroTC(config, _traincorpus, _trainlabels; verbose=true)
+            valX = vectorize.(tc, _testcorpus)
+            ypred = predict.(tc, valX)
+            push!(S, recall_score(_testlabels.refs, ypred, weight=:macro))
+        end
+
+        mean(S)
+    end
+
+    for t in traincorpus[1:10]
+        @show t
+    end
     @show countmap(trainlabels)
     @show countmap(testlabels)
 
     space = MicroTC_ConfigSpace(
         minocc=[1],
         textconfig=TextConfigSpace(
-            qlist=[[4]],
-            nlist=[[1], []],
+            qlist=[[4], [3], [5]],
+            nlist=[[1], [1, 2], []],
             slist=[]
         ),
+        textmodel = [:EntModel],
         ncenters=[0],
+        classweights=[:none],
         centerselection=[CentroidSelection()]
     )
 
-    best_list = search_models(space, traincorpus, trainlabels, 8;
+    best_list = search_models(space, evaluate_model, 16;
         # search hyper-parameters
-        tol=0.01, searchmaxiters=3, folds=3, verbose=true, distributed=false)
+        bsize=16, mutbsize=8, crossbsize=8,
+        tol=0.01, maxiters=4, verbose=true, distributed=false)
 
     for (i, b) in enumerate(best_list)
         @info "-- perf best_lists[$i]:", i, b[1], b[2]

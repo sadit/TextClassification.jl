@@ -75,7 +75,6 @@ function MicroTC_ConfigSpace(;
 
         centerselection=[
             CentroidSelection(),
-            # RandomCenterSelection(),
             MedoidSelection(dist=CosineDistance()),
             KnnCentroidSelection(sel=CentroidSelection(), dist=CosineDistance())
         ],
@@ -142,7 +141,7 @@ function combine_configurations(space::MicroTC_ConfigSpace, config_list)
     )
 end
 
-function evaluate_model(
+function evaluate_model__(
         config::MicroTC_Config,
         train_corpus::AbstractVector{String},
         train_y::CategoricalArray,

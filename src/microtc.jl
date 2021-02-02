@@ -24,9 +24,7 @@ Base.copy(c::MicroTC;
         textmodel=c.textmodel
 ) = MicroTC(config, aknc, textmodel)
 
-function broadcastable(tc::MicroTC)
-    (tc,)
-end
+Base.broadcastable(tc::MicroTC) = (tc,)
 
 #=
 function MicroTC(textconfig::TextConfig, textmodel::TextModel, config::MicroTC_Config, train_corpus::AbstractVector{BOW}, train_y::CategoricalArray; verbose=true) 
@@ -58,7 +56,6 @@ end
 
 function MicroTC(config::MicroTC_Config, textmodel::TextModel, train_X::AbstractVector{S}, train_y::CategoricalArray; verbose=true) where {S<:SVEC}
     verbose && println("MicroTC> creating AKNC classifier")
-    @info config.akncconfig, typeof(train_X)
     aknc = AKNC(config.akncconfig, train_X, train_y; verbose=verbose)
     verbose && println("MicroTC> done")
     MicroTC(config, aknc, textmodel)
