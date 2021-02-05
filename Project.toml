@@ -33,7 +33,6 @@ SimilaritySearch = "0.4.5"
 StatsBase = "0.32.0, 0.33"
 StructTypes = "1.2"
 TextSearch = "0.7"
-julia = "0.7, 1"
 LIBLINEAR = "0.6.0"
 
 [extras]
