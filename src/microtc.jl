@@ -2,17 +2,18 @@
 # License is Apache 2.0: https://www.apache.org/licenses/LICENSE-2.0.txt
 
 using MLDataUtils, LinearAlgebra
-import KNearestCenters: transform, search_params, combine_configurations, random_configuration
+import KNearestCenters: combine_configurations, random_configuration
 import TextSearch: vectorize
 import StatsBase: predict
 import Base: hash, isequal
-export filtered_power_set, predict, vectorize, transform,
+export filtered_power_set, predict, vectorize,
         MicroTC, AngleDistance, CosineDistance, NormalizedAngleDistance, NormalizedCosineDistance
 import Base: hash, isequal
+using SparseArrays
 
-struct MicroTC{C_<:MicroTC_Config, AKNC_<:AKNC, TextModel_<:TextModel}
+struct MicroTC{C_<:MicroTC_Config, CLS_<:Any, TextModel_<:TextModel}
     config::C_
-    aknc::AKNC_
+    cls::CLS_
     textmodel::TextModel_
 end
 
@@ -20,9 +21,9 @@ StructTypes.StructType(::Type{<:MicroTC}) = StructTypes.Struct()
 
 Base.copy(c::MicroTC;
         config=c.config,
-        aknc::AKNC=c.nc,
+        cls=c.cls,
         textmodel=c.textmodel
-) = MicroTC(config, aknc, textmodel)
+) = MicroTC(config, cls, textmodel)
 
 Base.broadcastable(tc::MicroTC) = (tc,)
 
@@ -47,39 +48,30 @@ function create_textmodel(config::MicroTC_Config, train_X::AbstractVector{BOW}, 
 end
 
 function MicroTC(config::MicroTC_Config, train_corpus::AbstractVector{S}, train_y::CategoricalArray; verbose=true) where {S<:AbstractString}
-    verbose && println("MicroTC> creating bag of words for corpus")
     train_corpus_bow = [compute_bow(config.textconfig, text) for text in train_corpus]
-    verbose && println("MicroTC> creating textmodel $(config.textmodel)")
     textmodel = create_textmodel(config, train_corpus_bow, train_y)
     MicroTC(config, textmodel, [vectorize(textmodel, bow) for bow in train_corpus_bow], train_y)
 end
 
+using LIBLINEAR
+StructTypes.StructType(::Type{<:LIBLINEAR.LinearModel}) = StructTypes.Struct()
+
 function MicroTC(config::MicroTC_Config, textmodel::TextModel, train_X::AbstractVector{S}, train_y::CategoricalArray; verbose=true) where {S<:SVEC}
-    verbose && println("MicroTC> creating AKNC classifier")
-    aknc = AKNC(config.akncconfig, train_X, train_y; verbose=verbose)
-    verbose && println("MicroTC> done")
-    MicroTC(config, aknc, textmodel)
+    cls = if config.cls isa KncConfig
+        Knc(config.cls, train_X, train_y)
+    else
+        linear_train(train_y.refs, sparse(train_X); C=config.cls.C, eps=config.cls.eps)
+    end
+    MicroTC(config, cls, textmodel)
 end
 
 vectorize(tc::MicroTC, text)::SVEC = vectorize(tc.textmodel, compute_bow(tc.config.textconfig, text))
 vectorize(tc::MicroTC, bow::BOW)::SVEC = vectorize(tc.textmodel, bow)
 
-predict(tc::MicroTC, text::S) where {S<:Union{AbstractString,BOW}} = predict(tc.aknc, vectorize(tc, text))
-predict(tc::MicroTC, vec::SVEC) = predict(tc.aknc, vec)
+predict(tc::MicroTC, text::S) where {S<:Union{AbstractString,BOW}} = predict(tc.cls, vectorize(tc, text))
+predict(tc::MicroTC, vec::SVEC) = predict(tc.cls, vec)
 
-function transform(tc::MicroTC, vec::SVEC)
-    X = transform(tc.nc.centers, tc.nc.dmax, tc.kernel, vec)
-    M = labelmap(tc.nc.class_map)
-    L = zeros(Float64, tc.nc.nclasses)
-
-    for i in 1:tc.nc.nclasses
-        lst = get(M, i, nothing)
-        if lst !== nothing
-           L[i] = maximum(X[lst])
-        end
-    end
-
-    L
+function predict(cls::LIBLINEAR.LinearModel, vec::SVEC)
+    ypred = linear_predict(cls, sparse([vec], cls.nr_feature))
+    ypred[1][1]
 end
-
-transform(tc::MicroTC, text::AbstractString) = transform(tc, vectorize(tc, text))

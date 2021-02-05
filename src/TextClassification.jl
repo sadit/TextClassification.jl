@@ -11,9 +11,9 @@ using TextSearch
 using CategoricalArrays
 import KNearestCenters: random_configuration, combine_configurations
 
-include("searchmodels.jl")
 include("centerselection.jl")
 include("textconfigspace.jl")
+include("liblinearconfig.jl")
 include("microtcconfig.jl")
 include("microtc.jl")
 end # module

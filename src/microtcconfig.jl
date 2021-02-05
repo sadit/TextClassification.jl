@@ -1,13 +1,12 @@
 # This file is a part of TextClassification.jl
 # License is Apache 2.0: https://www.apache.org/licenses/LICENSE-2.0.txt
-export MicroTC_Config, MicroTC_ConfigSpace, AKNC_ConfigSpace, TextConfigSpace
+export MicroTC_Config, MicroTC_ConfigSpace, TextConfigSpace
 
-struct MicroTC_Config{WeightingType_<:WeightingType, Config_<:AKNC_Config} <: AbstractConfig
+struct MicroTC_Config{WeightingType_<:WeightingType, Config_<:Any} <: AbstractConfig
     textconfig::TextConfig
     textmodel::Symbol
     weighting::WeightingType_
-    akncconfig::Config_
-
+    cls::Config_
     p::Float64
     smooth::Float64
     minocc::Int        
@@ -20,34 +19,35 @@ function MicroTC_Config(;
         textconfig::TextConfig=TextConfig(),
         textmodel::Symbol=:EntModel,
         weighting::WeightingType=EntTpWeighting(),
-        akncconfig::AKNC_Config=AKNC_Config(),
+        cls::AbstractConfig=KncConfig(),
+        #cls=LiblinearConfig(1.0, 0.1),
         p::Real=1.0,
         smooth::AbstractFloat=3.0,
 		minocc::Integer=1,
         classweights=:balance
     )
     
-    MicroTC_Config(textconfig, textmodel, weighting, akncconfig, p, smooth, minocc, classweights)
+    MicroTC_Config(textconfig, textmodel, weighting, cls, p, smooth, minocc, classweights)
 end
 
 Base.copy(c::MicroTC_Config;
         textconfig=c.textconfig,
         textmodel=c.textmodel,
         weighting=c.weighting,
-        akncconfig=c.akncconfig,
+        cls=c.cls,
         p=c.p,
         smooth=c.smooth,
         minocc=c.minocc,
         recall=c.recall,
         classweights=c.classweights
-    ) = MicroTC_Config(textconfig, textmodel, weighting, akncconfig, p, smooth, minocc, classweights)
+    ) = MicroTC_Config(textconfig, textmodel, weighting, cls, p, smooth, minocc, classweights)
 
-struct MicroTC_ConfigSpace <: AbstractConfigSpace
+struct MicroTC_ConfigSpace{ConfigSpace_<:AbstractConfigSpace} <: AbstractConfigSpace
     textmodel::Vector{Symbol}
     weighting::Dict
     classweights::Vector{Symbol}
     textconfig::TextConfigSpace
-    akncconfig::AKNC_ConfigSpace
+    cls::ConfigSpace_
     p::Vector
     smooth::Vector
     minocc::Vector
@@ -58,11 +58,11 @@ Base.copy(s::MicroTC_ConfigSpace;
         weigthing=s.weigthing,
         classweights=s.classweights,
         textconfig=s.textconfig,
-        akncconfig=s.akncconfig,
+        cls=s.cls,
         p=s.p,
         smooth=s.smooth,
         minocc=s.minocc
-    ) = MicroTC_ConfigSpace(textmodel, weigthing, classweights, textconfig, akncconfig, p, smooth, minocc)
+    ) = MicroTC_ConfigSpace(textmodel, weigthing, classweights, textconfig, cls, p, smooth, minocc)
 
 function MicroTC_ConfigSpace(;
         textmodel::Vector = [:EntModel, :VectorModel],
@@ -86,7 +86,7 @@ function MicroTC_ConfigSpace(;
         initial_clusters::Vector=[:fft, :dnet, :rand],
         split_entropy::Vector=[0.3, 0.6, 0.9],
         minimum_elements_per_region::Vector=[1, 3, 5],
-        akncconfig::AKNC_ConfigSpace = AKNC_ConfigSpace(
+        #=cls::AbstractConfigSpace = KncConfigSpace(
             centerselection=centerselection,
             kernel=kernel,
             k=k,
@@ -96,13 +96,14 @@ function MicroTC_ConfigSpace(;
             initial_clusters=initial_clusters,
             split_entropy=split_entropy,
             minimum_elements_per_region=minimum_elements_per_region
-        ),
+        ),=#
+        cls::LiblinearConfigSpace=LiblinearConfigSpace([100.0, 10.0, 1.0, 0.1, 0.01], [0.1, 0.01, 0.001]),
         p::Vector{Float64} = [1.0],
         smooth::Vector = [0, 1, 3],
         minocc::Vector = [1, 3, 7]
     )
 
-    MicroTC_ConfigSpace(textmodel, weighting, classweights, textconfig, akncconfig, p, smooth, minocc)
+    MicroTC_ConfigSpace(textmodel, weighting, classweights, textconfig, cls, p, smooth, minocc)
 end
 
 function random_configuration(space::MicroTC_ConfigSpace)
@@ -119,7 +120,7 @@ function random_configuration(space::MicroTC_ConfigSpace)
         textmodel=textmodel,
         weighting=weighting,
         classweights=classweights,
-        akncconfig=random_configuration(space.akncconfig),
+        cls=random_configuration(space.cls),
         p=rand(space.p),
         smooth=smooth,
 		minocc=rand(space.minocc)
@@ -134,27 +135,9 @@ function combine_configurations(space::MicroTC_ConfigSpace, config_list)
         textmodel=a.textmodel,
         weighting=a.weighting,
         classweights=_sel().classweights,
-        akncconfig=combine_configurations(AKNC_Config[c.akncconfig for c in config_list]),
+        cls=combine_configurations(space.cls, [c.cls for c in config_list]),
         p=_sel().p,
         smooth=_sel().smooth,
 		minocc=_sel().minocc
     )
-end
-
-function evaluate_model__(
-        config::MicroTC_Config,
-        train_corpus::AbstractVector{String},
-        train_y::CategoricalArray,
-        test_corpus::AbstractVector{String},
-        test_y::CategoricalArray;
-        verbose=true
-    )
-    tc = MicroTC(config, train_corpus, train_y; verbose=verbose)
-    test_X = [vectorize(tc, text) for text in test_corpus]
-    ypred = [predict(tc, x) for x in test_X]
-    s = classification_scores(test_y.refs, ypred)
-    if verbose
-        println(stderr, "MicroTC> gold:", typeof(test_y), ", ypred:", typeof(ypred), "-- scores:", s)
-    end
-    (scores=s, voc=length(tc.textmodel.tokens))
 end
