@@ -1,0 +1,3 @@
+[deps]
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+TextClassification = "8e067cb0-742a-4f90-93f9-f1fa01b385ec"

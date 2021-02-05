@@ -41,8 +41,8 @@ function MicroTC_ConfigSpace(;
             MedoidSelection(dist=CosineDistance()),
             KnnCentroidSelection(sel=CentroidSelection(), dist=CosineDistance())
         ],
-        textmodel::Vector=[EntModelConfigSpace(), VectorModelConfigSpace()],
-        cls::Vector=[
+        textmodel=[EntModelConfigSpace(), VectorModelConfigSpace()],
+        cls=[
             KncConfigSpace(
                 centerselection=centerselection,
                 kernel=kernel,
