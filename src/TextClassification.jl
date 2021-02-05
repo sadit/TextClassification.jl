@@ -13,6 +13,7 @@ import KNearestCenters: random_configuration, combine_configurations
 
 include("centerselection.jl")
 include("textconfigspace.jl")
+include("textmodelspace.jl")
 include("liblinearconfig.jl")
 include("microtcconfig.jl")
 include("microtc.jl")

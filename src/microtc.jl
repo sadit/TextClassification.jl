@@ -27,21 +27,16 @@ Base.copy(c::MicroTC;
 
 Base.broadcastable(tc::MicroTC) = (tc,)
 
-#=
-function MicroTC(textconfig::TextConfig, textmodel::TextModel, config::MicroTC_Config, train_corpus::AbstractVector{BOW}, train_y::CategoricalArray; verbose=true) 
-    textmodel = create_textmodel(config, train_corpus, train_y)
-    MicroTC(config, textmodel, train_corpus, train_y; verbose=verbose)
-end
-=#
 function create_textmodel(config::MicroTC_Config, train_X::AbstractVector{BOW}, train_y::CategoricalArray)
-    model = if config.textmodel == :EntModel
-        EntModel(config.weighting, train_X, train_y, smooth=config.smooth, minocc=config.minocc, weights=config.classweights)
+    c = config.textmodel
+    model = if c isa EntModelConfig
+        EntModel(c.weighting, train_X, train_y, smooth=c.smooth, minocc=c.minocc, weights=c.classweights)
     else
-        VectorModel(config.weighting, sum(train_X), minocc=config.minocc)
+        VectorModel(c.weighting, sum(train_X), minocc=c.minocc)
     end
 
-    if config.p < 1.0
-        model = prune_select_top(model, config.p)
+    if c.keeptop < 1.0
+        model = prune_select_top(model, c.keeptop)
     end
 
     model

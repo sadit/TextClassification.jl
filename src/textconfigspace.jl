@@ -16,26 +16,31 @@ struct TextConfigSpace <: AbstractConfig
     del_diac::Vector{Bool}
     del_dup::Vector{Bool}
     del_punc::Vector{Bool}
+
     group_num::Vector{Bool}
     group_url::Vector{Bool}
     group_usr::Vector{Bool}
     group_emo::Vector{Bool}
+
     lc::Vector{Bool}
     qlist::Vector{Vector{Int}}
     nlist::Vector{Vector{Int}}
     slist::Vector{Vector{Skipgram}}
 end
 
+Base.eltype(::TextConfigSpace) = TextConfig
 StructTypes.StructType(::Type{TextConfigSpace}) = StructTypes.Struct()
 
 TextConfigSpace(;
     del_diac::Vector=[true],
     del_dup::Vector=[false],
     del_punc::Vector=[false],
+
     group_num::Vector=[true],
     group_url::Vector=[true],
     group_usr::Vector=[true],
     group_emo::Vector=[false],
+
     lc::Vector=[true],
     qlist::Vector=QLIST,
     nlist::Vector=NLIST,
@@ -47,10 +52,12 @@ function random_configuration(space::TextConfigSpace)
         rand(space.del_diac),
         rand(space.del_dup),
         rand(space.del_punc),
+
         rand(space.group_num),
         rand(space.group_url),
         rand(space.group_usr),
         rand(space.group_emo),
+        
         rand(space.lc),
         isempty(space.qlist) ? Int[] : rand(space.qlist),
         isempty(space.nlist) ? Int[] : rand(space.nlist),
@@ -58,7 +65,7 @@ function random_configuration(space::TextConfigSpace)
     )
 end
 
-function combine_configurations(space::TextConfigSpace, config_list::AbstractVector{TextConfig})
+function combine_configurations(::Type{<:TextConfig}, config_list::AbstractVector)
     _sel() = rand(config_list)
 
     TextConfig(

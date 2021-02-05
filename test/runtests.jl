@@ -48,15 +48,12 @@ end
     @show countmap(testlabels)
 
     space = MicroTC_ConfigSpace(
-        minocc=[1],
-        textconfig=TextConfigSpace(
+       textconfig=TextConfigSpace(
             qlist=[[4], [3], [5]],
             nlist=[[1], [1, 2], []],
             slist=[]
         ),
-        textmodel = [:EntModel],
         ncenters=[0],
-        classweights=[:none],
         centerselection=[CentroidSelection()]
     )
 

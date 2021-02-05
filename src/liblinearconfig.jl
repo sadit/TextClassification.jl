@@ -23,7 +23,7 @@ function random_configuration(space::LiblinearConfigSpace)
     LiblinearConfig(rand(space.C), rand(space.eps))
 end
 
-function combine_configurations(space::LiblinearConfigSpace, config_list::AbstractVector{LiblinearConfig})
+function combine_configurations(::Type{LiblinearConfig}, config_list::AbstractVector)
     _sel() = rand(config_list)
 
     LiblinearConfig(_sel().C, _sel().eps)
