@@ -52,9 +52,7 @@ end
             qlist=[[4], [3], [5]],
             nlist=[[1], [1, 2], []],
             slist=[]
-        ),
-        ncenters=[0],
-        centerselection=[CentroidSelection()]
+        )
     )
 
     best_list = search_models(space, evaluate_model, 16;

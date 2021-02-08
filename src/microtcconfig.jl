@@ -27,37 +27,40 @@ end
 
 Base.eltype(::MicroTC_ConfigSpace) = MicroTC_Config
 
-function MicroTC_ConfigSpace(;
+function MicroTC_KncConfigSpace(;
         kernel=[k_(CosineDistance()) for k_ in [DirectKernel, ReluKernel]],
         k::Vector=[1],
         maxiters::Vector=[1, 3, 10],
         recall::Vector=[1.0],
-        ncenters::Vector=[0, 7],
+        ncenters::Vector=[-7, 0, 7],
         initial_clusters::Vector=[:fft, :dnet, :rand],
-        split_entropy::Vector=[0.3, 0.6, 0.9],
+        split_entropy::Vector=[0.3, 0.6],
         minimum_elements_per_region::Vector=[1, 3, 5],
         centerselection=[
             CentroidSelection(),
             MedoidSelection(dist=CosineDistance()),
             KnnCentroidSelection(sel=CentroidSelection(), dist=CosineDistance())
         ],
+    )
+    KncConfigSpace(
+        centerselection=centerselection,
+        kernel=kernel,
+        k=k,
+        maxiters=maxiters,
+        recall=recall,
+        ncenters=ncenters,
+        initial_clusters=initial_clusters,
+        split_entropy=split_entropy,
+        minimum_elements_per_region=minimum_elements_per_region
+    )
+end
+
+function MicroTC_ConfigSpace(;
         textmodel=[EntModelConfigSpace(), VectorModelConfigSpace()],
         cls=[
-            KncConfigSpace(
-                centerselection=centerselection,
-                kernel=kernel,
-                k=k,
-                maxiters=maxiters,
-                recall=recall,
-                ncenters=ncenters,
-                initial_clusters=initial_clusters,
-                split_entropy=split_entropy,
-                minimum_elements_per_region=minimum_elements_per_region
-            ),
-            LiblinearConfigSpace(
-                [100.0, 10.0, 1.0, 0.1, 0.01],
-                [0.1, 0.01, 0.001]
-            )
+            MicroTC_KncConfigSpace(),
+            LiblinearConfigSpace(),
+            KnnClassifierConfigSpace([1, 5, 11], [30, 100, typemax(Int)])
         ],
         textconfig::TextConfigSpace = TextConfigSpace()
     )
@@ -81,6 +84,7 @@ function combine_configurations(::Type{<:MicroTC_Config}, config_list)
     a = _sel()
     typeT = Base.typename(typeof(a.textmodel)).wrapper
     typeC = Base.typename(typeof(a.cls)).wrapper
+
     MicroTC_Config(
         textconfig=combine_configurations(TextConfig, [c.textconfig for c in config_list]),
         textmodel=combine_configurations(a.textmodel, [c.textmodel for c in config_list if c.textmodel isa typeT]),

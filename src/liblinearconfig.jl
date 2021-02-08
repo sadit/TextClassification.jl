@@ -3,6 +3,9 @@
 
 export LiblinearConfig, LiblinearConfigSpace
 
+using LIBLINEAR
+StructTypes.StructType(::Type{<:LIBLINEAR.LinearModel}) = StructTypes.Struct()
+
 struct LiblinearConfig <: AbstractConfig
     C::Float64
     eps::Float64
@@ -30,4 +33,10 @@ function combine_configurations(::Type{LiblinearConfig}, config_list::AbstractVe
     _sel() = rand(config_list)
 
     LiblinearConfig(_sel().C, _sel().eps)
+end
+
+
+function predict(cls::LIBLINEAR.LinearModel, vec::SVEC)
+    ypred = linear_predict(cls, sparse([vec], cls.nr_feature))
+    ypred[1][1]
 end

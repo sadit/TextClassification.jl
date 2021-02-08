@@ -27,6 +27,11 @@ Base.copy(c::MicroTC;
 
 Base.broadcastable(tc::MicroTC) = (tc,)
 
+"""
+    create_textmodel(config::MicroTC_Config, train_X::AbstractVector{BOW}, train_y::CategoricalArray)
+
+Creates a text model based on the dataset and the given configuration
+"""
 function create_textmodel(config::MicroTC_Config, train_X::AbstractVector{BOW}, train_y::CategoricalArray)
     c = config.textmodel
     model = if c isa EntModelConfig
@@ -42,31 +47,46 @@ function create_textmodel(config::MicroTC_Config, train_X::AbstractVector{BOW}, 
     model
 end
 
-function MicroTC(config::MicroTC_Config, train_corpus::AbstractVector{S}, train_y::CategoricalArray; verbose=true) where {S<:AbstractString}
+"""
+    MicroTC(config::MicroTC_Config, train_corpus::AbstractVector, train_y::CategoricalArray; verbose=true)
+    MicroTC(config::MicroTC_Config, textmodel::TextModel, train_X::AbstractVector{S}, train_y::CategoricalArray; verbose=true) where {S<:SVEC}
+
+Creates a MicroTC model on the given dataset and configuration
+"""
+function MicroTC(config::MicroTC_Config, train_corpus::AbstractVector, train_y::CategoricalArray; verbose=true)
     train_corpus_bow = [compute_bow(config.textconfig, text) for text in train_corpus]
     textmodel = create_textmodel(config, train_corpus_bow, train_y)
     MicroTC(config, textmodel, [vectorize(textmodel, bow) for bow in train_corpus_bow], train_y)
 end
 
-using LIBLINEAR
-StructTypes.StructType(::Type{<:LIBLINEAR.LinearModel}) = StructTypes.Struct()
-
 function MicroTC(config::MicroTC_Config, textmodel::TextModel, train_X::AbstractVector{S}, train_y::CategoricalArray; verbose=true) where {S<:SVEC}
     cls = if config.cls isa KncConfig
         Knc(config.cls, train_X, train_y)
+    elseif config.cls isa KnnClassifierConfig
+        KnnClassifier(config.cls, train_X, train_y)
     else
-        linear_train(train_y.refs, sparse(train_X); C=config.cls.C, eps=config.cls.eps)
+        linear_train(train_y.refs, sparse(train_X, textmodel.m); C=config.cls.C, eps=config.cls.eps)
     end
+
     MicroTC(config, cls, textmodel)
 end
 
+"""
+    vectorize(tc::MicroTC, text)
+    vectorize(tc::MicroTC, bow::BOW)
+
+Creates a weighted vector using the model. The input `text` can be a string or an array of strings;
+it also can be an already computed bag of words.
+
+"""
 vectorize(tc::MicroTC, text)::SVEC = vectorize(tc.textmodel, compute_bow(tc.config.textconfig, text))
 vectorize(tc::MicroTC, bow::BOW)::SVEC = vectorize(tc.textmodel, bow)
 
-predict(tc::MicroTC, text::S) where {S<:Union{AbstractString,BOW}} = predict(tc.cls, vectorize(tc, text))
-predict(tc::MicroTC, vec::SVEC) = predict(tc.cls, vec)
+"""
+    predict(tc::MicroTC, text)
+    predict(tc::MicroTC, vec::SVEC)
 
-function predict(cls::LIBLINEAR.LinearModel, vec::SVEC)
-    ypred = linear_predict(cls, sparse([vec], cls.nr_feature))
-    ypred[1][1]
-end
+Predicts the label of the given input
+"""
+predict(tc::MicroTC, text) = predict(tc.cls, vectorize(tc, text))
+predict(tc::MicroTC, vec::SVEC) = predict(tc.cls, vec)
