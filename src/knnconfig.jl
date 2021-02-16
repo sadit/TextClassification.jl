@@ -22,9 +22,7 @@ function random_configuration(space::KnnClassifierConfigSpace)
     KnnClassifierConfig(rand(space.k), rand(space.keeptop))
 end
 
-function combine_configurations(::Type{KnnClassifierConfig}, configlist::AbstractVector)
-    _sel() = rand(configlist)
-    a, b = _sel(), _sel()
+function combine_configurations(a::KnnClassifierConfig, b::KnnClassifierConfig)
     k = div(a.k + b.k, 2)
     KnnClassifierConfig(k, a.keeptop)
 end

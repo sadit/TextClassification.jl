@@ -29,12 +29,9 @@ function random_configuration(space::LiblinearConfigSpace)
     LiblinearConfig(rand(space.C), rand(space.eps))
 end
 
-function combine_configurations(::Type{LiblinearConfig}, config_list::AbstractVector)
-    _sel() = rand(config_list)
-
-    LiblinearConfig(_sel().C, _sel().eps)
+function combine_configurations(a::LiblinearConfig, b::LiblinearConfig)
+    LiblinearConfig(a.C, b.eps)
 end
-
 
 function predict(cls::LIBLINEAR.LinearModel, vec::SVEC)
     ypred = linear_predict(cls, sparse([vec], cls.nr_feature))

@@ -9,7 +9,8 @@ using KNearestCenters
 using TextSearch
 
 using CategoricalArrays
-import KNearestCenters: random_configuration, combine_configurations
+using SearchModels
+import SearchModels: random_configuration, combine_configurations
 
 include("centerselection.jl")
 include("textconfigspace.jl")

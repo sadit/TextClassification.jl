@@ -79,15 +79,14 @@ function random_configuration(space::MicroTC_ConfigSpace)
     )
 end
 
-function combine_configurations(::Type{<:MicroTC_Config}, config_list)
-    _sel() = rand(config_list)
-    a = _sel()
-    typeT = Base.typename(typeof(a.textmodel)).wrapper
-    typeC = Base.typename(typeof(a.cls)).wrapper
-
+function combine_configurations(a::MicroTC_Config, L::AbstractVector)
+    t_ = Base.typename(typeof(a.textmodel))
+    c_ = Base.typename(typeof(a.cls))
+    b = L[findfirst(p -> Base.typename(typeof(p.first.textmodel)) == t_, L)].first
+    c = L[findfirst(p -> Base.typename(typeof(p.first.cls)) == c_, L)].first
     MicroTC_Config(
-        textconfig=combine_configurations(TextConfig, [c.textconfig for c in config_list]),
-        textmodel=combine_configurations(a.textmodel, [c.textmodel for c in config_list if c.textmodel isa typeT]),
-        cls=combine_configurations(a.cls, [c.cls for c in config_list if c.cls isa typeC])
+        textconfig=combine_configurations(a.textconfig, b.textconfig),
+        textmodel=combine_configurations(a.textmodel, b.textmodel),
+        cls=combine_configurations(a.cls, c.cls)
     )
 end

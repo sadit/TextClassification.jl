@@ -1,4 +1,4 @@
-using Test, StatsBase, KCenters, KNearestCenters, TextSearch, TextClassification, CategoricalArrays
+using Test, StatsBase, SearchModels, KCenters, KNearestCenters, TextSearch, TextClassification, CategoricalArrays
 using CSV, Random, MLDataUtils, JSON3
 
 function train_test_split(corpus, labels, at=0.7)
@@ -29,7 +29,7 @@ end
     traincorpus, trainlabels, testcorpus, testlabels = train_test_split(corpus, labels, 0.7)
     folds = folds_split(traincorpus, trainlabels)
 
-    function evaluate_model(config::MicroTC_Config)
+    function error_function(config::MicroTC_Config)
         S = Float64[]
         for (_traincorpus, _trainlabels, _testcorpus, _testlabels) in folds
             tc = MicroTC(config, _traincorpus, _trainlabels; verbose=true)
@@ -38,12 +38,13 @@ end
             push!(S, recall_score(_testlabels.refs, ypred, weight=:macro))
         end
 
-        mean(S)
+        1.0 - mean(S)
     end
 
     for t in traincorpus[1:10]
         @show t
     end
+
     @show countmap(trainlabels)
     @show countmap(testlabels)
 
@@ -55,7 +56,7 @@ end
         )
     )
 
-    best_list = search_models(space, evaluate_model, 16;
+    best_list = search_models(space, error_function, 16;
         # search hyper-parameters
         bsize=16, mutbsize=8, crossbsize=8,
         tol=0.01, maxiters=4, verbose=true, distributed=false)

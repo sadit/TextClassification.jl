@@ -12,7 +12,7 @@ const QLIST = filtered_power_set([2, 3, 4, 5, 6], 1, 3)
 const NLIST = filtered_power_set([1, 2, 3], 0, 2)
 const SLIST = [[Skipgram(2, 1), Skipgram(2, 2)], [Skipgram(2, 1)], [Skipgram(2, 2)], Skipgram[]]
 
-struct TextConfigSpace <: AbstractConfig
+struct TextConfigSpace <: AbstractConfigSpace
     del_diac::Vector{Bool}
     del_dup::Vector{Bool}
     del_punc::Vector{Bool}
@@ -45,7 +45,7 @@ TextConfigSpace(;
     qlist::Vector=QLIST,
     nlist::Vector=NLIST,
     slist::Vector=SLIST
-)  = TextConfigSpace(del_diac, del_dup, del_punc, group_num, group_url, group_usr, group_emo, lc, qlist, nlist, slist)
+) = TextConfigSpace(del_diac, del_dup, del_punc, group_num, group_url, group_usr, group_emo, lc, qlist, nlist, slist)
 
 function random_configuration(space::TextConfigSpace)
     TextConfig(
@@ -65,20 +65,20 @@ function random_configuration(space::TextConfigSpace)
     )
 end
 
-function combine_configurations(::Type{<:TextConfig}, config_list::AbstractVector)
-    _sel() = rand(config_list)
+function combine_configurations(a::TextConfig, b::TextConfig)
+    L = [a, b]
 
     TextConfig(
-        _sel().del_diac,
-        _sel().del_dup,
-        _sel().del_punc,
-        _sel().group_num,
-        _sel().group_url,
-        _sel().group_usr,
-        _sel().group_emo,
-        _sel().lc,
-        _sel().qlist,
-        _sel().nlist,
-        _sel().slist
+        rand(L).del_diac,
+        rand(L).del_dup,
+        rand(L).del_punc,
+        rand(L).group_num,
+        rand(L).group_url,
+        rand(L).group_usr,
+        rand(L).group_emo,
+        rand(L).lc,
+        rand(L).qlist,
+        rand(L).nlist,
+        rand(L).slist
     )
 end

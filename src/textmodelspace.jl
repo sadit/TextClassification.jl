@@ -63,18 +63,17 @@ function random_configuration(space::EntModelConfigSpace)
     )
 end
 
-function combine_configurations(::Type{T}, configlist::AbstractVector) where {T<:EntModelConfig}
-    _sel() = rand(configlist)
+function combine_configurations(a::EntModelConfig, b::EntModelConfig)
+    L = [a, b]
 
     EntModelConfig(
-        _sel().weighting,
-        _sel().minocc,
-        _sel().smooth,
-        _sel().keeptop,
-        _sel().classweights
+        rand(L).weighting,
+        rand(L).minocc,
+        rand(L).smooth,
+        rand(L).keeptop,
+        rand(L).classweights
     )
 end
-
 
 function random_configuration(space::VectorModelConfigSpace)
     VectorModelConfig(
@@ -84,12 +83,12 @@ function random_configuration(space::VectorModelConfigSpace)
     )
 end
 
-function combine_configurations(::Type{<:VectorModelConfig}, configlist::AbstractVector)
-    _sel() = rand(configlist)
+function combine_configurations(a::VectorModelConfig, b::VectorModelConfig)
+    L = [a, b]
 
     VectorModelConfig(
-        _sel().weighting,
-        _sel().minocc,
-        _sel().keeptop
+        rand(L).weighting,
+        rand(L).minocc,
+        rand(L).keeptop
     )
 end
