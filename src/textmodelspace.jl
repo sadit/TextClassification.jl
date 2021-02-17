@@ -30,6 +30,43 @@ EntModelConfigSpace(;
     classweights::Vector=[:balance, :none]
 ) = EntModelConfigSpace(weighting, minocc, keeptop, smooth, classweights)
 
+function random_configuration(space::EntModelConfigSpace)
+    EntModelConfig(
+        rand(space.weighting),
+        rand(space.minocc),
+        rand(space.smooth),
+        rand(space.keeptop),
+        rand(space.classweights)
+    )
+end
+
+function combine_configurations(a::EntModelConfig, b::EntModelConfig)
+    L = [a, b]
+
+    EntModelConfig(
+        rand(L).weighting,
+        rand(L).minocc,
+        rand(L).smooth,
+        rand(L).keeptop,
+        rand(L).classweights
+    )
+end
+
+function mutate_configuration(::AbstractConfigSpace, c::EntModelConfig, iter)
+    minocc = SearchModels.translate(c.minocc, 3, lower=0)
+    smooth = SearchModels.translate(c.smooth, 2, lower=0)
+    keeptop = SearchModels.scale(c.keeptop, lower=0.0, upper=1.0)
+
+    EntModelConfig(
+        c.weighting,
+        minocc,
+        smooth,
+        keeptop,
+        c.classweights
+    )
+end
+
+
 
 struct VectorModelConfig{W_<:WeightingType} <: AbstractConfig
     weighting::W_
@@ -53,28 +90,6 @@ VectorModelConfigSpace(;
     keeptop::Vector{Float64}=[1.0],
 ) = VectorModelConfigSpace(weighting, minocc, keeptop)
 
-function random_configuration(space::EntModelConfigSpace)
-    EntModelConfig(
-        rand(space.weighting),
-        rand(space.minocc),
-        rand(space.smooth),
-        rand(space.keeptop),
-        rand(space.classweights)
-    )
-end
-
-function combine_configurations(a::EntModelConfig, b::EntModelConfig)
-    L = [a, b]
-
-    EntModelConfig(
-        rand(L).weighting,
-        rand(L).minocc,
-        rand(L).smooth,
-        rand(L).keeptop,
-        rand(L).classweights
-    )
-end
-
 function random_configuration(space::VectorModelConfigSpace)
     VectorModelConfig(
         rand(space.weighting),
@@ -91,4 +106,10 @@ function combine_configurations(a::VectorModelConfig, b::VectorModelConfig)
         rand(L).minocc,
         rand(L).keeptop
     )
+end
+
+function mutate_configuration(::AbstractConfigSpace, c::VectorModelConfig, iter)
+    minocc = SearchModels.translate(c.minocc, 3, lower=0)
+    keeptop = SearchModels.scale(c.keeptop, lower=0.0, upper=1.0)
+    VectorModelConfig(c.weighting, minocc, keeptop)
 end

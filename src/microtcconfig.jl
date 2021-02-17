@@ -79,14 +79,17 @@ function random_configuration(space::MicroTC_ConfigSpace)
     )
 end
 
+function mutate_configuration(space::MicroTC_ConfigSpace, c::MicroTC_Config, iter)
+    textconfig = mutate_configuration(space.textconfig, c.textconfig, iter)
+    textmodel = mutate_configuration(space.textmodel, c.textmodel, iter)
+    cls = mutate_configuration(space.cls, c.cls, iter)
+    MicroTC_Config(textconfig=textconfig, textmodel=textmodel, cls=cls)
+end
+
 function combine_configurations(a::MicroTC_Config, L::AbstractVector)
-    t_ = Base.typename(typeof(a.textmodel))
-    c_ = Base.typename(typeof(a.cls))
-    b = L[findfirst(p -> Base.typename(typeof(p.first.textmodel)) == t_, L)].first
-    c = L[findfirst(p -> Base.typename(typeof(p.first.cls)) == c_, L)].first
-    MicroTC_Config(
-        textconfig=combine_configurations(a.textconfig, b.textconfig),
-        textmodel=combine_configurations(a.textmodel, b.textmodel),
-        cls=combine_configurations(a.cls, c.cls)
-    )
+    textconfig = combine_configurations(a.textconfig, [b.first.textconfig => b.second for b in L])
+    textmodel = combine_configurations(a.textmodel, [b.first.textmodel => b.second for b in L])
+    cls = combine_configurations(a.cls, [b.first.cls => b.second for b in L])
+
+    MicroTC_Config(textconfig=textconfig, textmodel=textmodel, cls=cls)
 end

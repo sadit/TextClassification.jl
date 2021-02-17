@@ -19,8 +19,8 @@ struct LiblinearConfigSpace <: AbstractConfigSpace
 end
 
 LiblinearConfigSpace(;
-    C=[100.0, 10.0, 1.0, 0.1, 0.01, 0.001],
-    eps=[0.1, 0.01, 0.001]
+    C=[10.0, 1.0, 0.1, 0.01],
+    eps=[0.1, 0.01]
 ) = LiblinearConfigSpace(C, eps)
 
 Base.eltype(::LiblinearConfigSpace) = LiblinearConfig
@@ -31,6 +31,10 @@ end
 
 function combine_configurations(a::LiblinearConfig, b::LiblinearConfig)
     LiblinearConfig(a.C, b.eps)
+end
+
+function mutate_configuration(space::LiblinearConfigSpace, a::LiblinearConfig, iter)
+    LiblinearConfig(SearchModels.scale(a.C, 10.0), SearchModels.scale(a.eps, 10.0))
 end
 
 function predict(cls::LIBLINEAR.LinearModel, vec::SVEC)

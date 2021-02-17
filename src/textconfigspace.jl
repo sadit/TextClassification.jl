@@ -28,8 +28,8 @@ struct TextConfigSpace <: AbstractConfigSpace
     slist::Vector{Vector{Skipgram}}
 end
 
-Base.eltype(::TextConfigSpace) = TextConfig
 StructTypes.StructType(::Type{TextConfigSpace}) = StructTypes.Struct()
+Base.eltype(::TextConfigSpace) = TextConfig
 
 TextConfigSpace(;
     del_diac::Vector=[true],

@@ -19,12 +19,7 @@ end
 
 StructTypes.StructType(::Type{<:MicroTC}) = StructTypes.Struct()
 
-Base.copy(c::MicroTC;
-        config=c.config,
-        cls=c.cls,
-        textmodel=c.textmodel
-) = MicroTC(config, cls, textmodel)
-
+Base.copy(c::MicroTC; config=c.config, cls=c.cls, textmodel=c.textmodel) = MicroTC(config, cls, textmodel)
 Base.broadcastable(tc::MicroTC) = (tc,)
 
 """

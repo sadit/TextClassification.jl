@@ -10,12 +10,13 @@ using TextSearch
 
 using CategoricalArrays
 using SearchModels
-import SearchModels: random_configuration, combine_configurations
+import SearchModels: random_configuration, combine_configurations, mutate_configuration, config_type
 
 include("centerselection.jl")
 include("textconfigspace.jl")
 include("textmodelspace.jl")
 include("knnconfig.jl")
+include("knnclassifier.jl")
 include("liblinearconfig.jl")
 include("microtcconfig.jl")
 include("microtc.jl")
