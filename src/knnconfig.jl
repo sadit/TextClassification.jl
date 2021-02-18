@@ -10,7 +10,7 @@ end
 
 StructTypes.StructType(::Type{<:KnnClassifierConfig}) = StructTypes.Struct()
 
-struct KnnClassifierConfigSpace <: AbstractConfigSpace
+struct KnnClassifierConfigSpace <: AbstractSolutionSpace
     k::Vector{Int}
     keeptop::Vector{Int}
 end
@@ -29,6 +29,6 @@ function combine_configurations(a::KnnClassifierConfig, b::KnnClassifierConfig)
     KnnClassifierConfig(k, a.keeptop)
 end
 
-function mutate_configuration(space::AbstractConfigSpace, a::KnnClassifierConfig, iter)
+function mutate_configuration(space::AbstractSolutionSpace, a::KnnClassifierConfig, iter)
     KnnClassifierConfig(SearchModels.translate(a.k, 2, lower=1, upper=33), SearchModels.scale(a.keeptop, lower=0.1, upper=1.0))
 end

@@ -19,9 +19,9 @@ function MicroTC_Config(;
     MicroTC_Config(textconfig, textmodel, cls)
 end
 
-struct MicroTC_ConfigSpace <: AbstractConfigSpace
+struct MicroTC_ConfigSpace <: AbstractSolutionSpace
     textconfig::TextConfigSpace
-    textmodel #Union{Vector,AbstractConfigSpace}
+    textmodel #Union{Vector,AbstractSolutionSpace}
     cls
 end
 

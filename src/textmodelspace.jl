@@ -12,7 +12,7 @@ end
 
 StructTypes.StructType(::Type{<:EntModelConfig}) = StructTypes.Struct()
 
-struct EntModelConfigSpace <: AbstractConfigSpace
+struct EntModelConfigSpace <: AbstractSolutionSpace
     weighting::Vector{WeightingType}
     minocc::Vector{Int}
     keeptop::Vector{Float64}
@@ -52,7 +52,7 @@ function combine_configurations(a::EntModelConfig, b::EntModelConfig)
     )
 end
 
-function mutate_configuration(::AbstractConfigSpace, c::EntModelConfig, iter)
+function mutate_configuration(::AbstractSolutionSpace, c::EntModelConfig, iter)
     minocc = SearchModels.translate(c.minocc, 3, lower=0)
     smooth = SearchModels.translate(c.smooth, 2, lower=0)
     keeptop = SearchModels.scale(c.keeptop, lower=0.0, upper=1.0)
@@ -76,7 +76,7 @@ end
 
 StructTypes.StructType(::Type{<:VectorModelConfig}) = StructTypes.Struct()
 
-struct VectorModelConfigSpace <: AbstractConfigSpace
+struct VectorModelConfigSpace <: AbstractSolutionSpace
     weighting::Vector{WeightingType}
     minocc::Vector{Int}
     keeptop::Vector{Float64}
@@ -108,7 +108,7 @@ function combine_configurations(a::VectorModelConfig, b::VectorModelConfig)
     )
 end
 
-function mutate_configuration(::AbstractConfigSpace, c::VectorModelConfig, iter)
+function mutate_configuration(::AbstractSolutionSpace, c::VectorModelConfig, iter)
     minocc = SearchModels.translate(c.minocc, 3, lower=0)
     keeptop = SearchModels.scale(c.keeptop, lower=0.0, upper=1.0)
     VectorModelConfig(c.weighting, minocc, keeptop)

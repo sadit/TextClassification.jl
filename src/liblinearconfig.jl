@@ -13,7 +13,7 @@ end
 
 StructTypes.StructType(::Type{LiblinearConfig}) = StructTypes.Struct()
 
-struct LiblinearConfigSpace <: AbstractConfigSpace
+struct LiblinearConfigSpace <: AbstractSolutionSpace
     C::Vector{Float64}
     eps::Vector{Float64}
 end
