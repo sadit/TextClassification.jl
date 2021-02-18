@@ -6,7 +6,7 @@ export LiblinearConfig, LiblinearConfigSpace
 using LIBLINEAR
 StructTypes.StructType(::Type{<:LIBLINEAR.LinearModel}) = StructTypes.Struct()
 
-struct LiblinearConfig <: AbstractConfig
+struct LiblinearConfig
     C::Float64
     eps::Float64
 end

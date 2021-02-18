@@ -2,7 +2,7 @@
 # License is Apache 2.0: https://www.apache.org/licenses/LICENSE-2.0.txt
 export MicroTC_Config, MicroTC_ConfigSpace, TextConfigSpace
 
-struct MicroTC_Config{T_<:AbstractConfig, C_<:AbstractConfig} <: AbstractConfig
+struct MicroTC_Config{T_, C_}
     textconfig::TextConfig
     textmodel::T_
     cls::C_

@@ -2,7 +2,7 @@
 # License is Apache 2.0: https://www.apache.org/licenses/LICENSE-2.0.txt
 
 export EntModelConfigSpace, VectorModelConfigSpace
-struct EntModelConfig{W_<:WeightingType} <: AbstractConfig
+struct EntModelConfig{W_<:WeightingType}
     weighting::W_
     minocc::Int
     smooth::Float64
@@ -68,7 +68,7 @@ end
 
 
 
-struct VectorModelConfig{W_<:WeightingType} <: AbstractConfig
+struct VectorModelConfig{W_<:WeightingType}
     weighting::W_
     minocc::Int
     keeptop::Float64

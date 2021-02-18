@@ -3,7 +3,7 @@
 
 export KnnClassifierConfig, KnnClassifierConfigSpace
 
-struct KnnClassifierConfig <: AbstractConfig
+struct KnnClassifierConfig
     k::Int
     keeptop::Int
 end
