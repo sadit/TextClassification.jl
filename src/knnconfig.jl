@@ -30,5 +30,8 @@ function combine_configurations(a::KnnClassifierConfig, b::KnnClassifierConfig)
 end
 
 function mutate_configuration(space::AbstractSolutionSpace, a::KnnClassifierConfig, iter)
-    KnnClassifierConfig(SearchModels.translate(a.k, 2, lower=1, upper=33), SearchModels.scale(a.keeptop, lower=0.1, upper=1.0))
+    KnnClassifierConfig(
+        SearchModels.translate(a.k, 2, lower=1, upper=33),
+        SearchModels.scale(a.keeptop, 3, lower=3, upper=maximum(space.keeptop))
+    )
 end
