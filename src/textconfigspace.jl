@@ -12,40 +12,24 @@ const QLIST = filtered_power_set([2, 3, 4, 5, 6], 1, 3)
 const NLIST = filtered_power_set([1, 2, 3], 0, 2)
 const SLIST = [[Skipgram(2, 1), Skipgram(2, 2)], [Skipgram(2, 1)], [Skipgram(2, 2)], Skipgram[]]
 
-struct TextConfigSpace <: AbstractSolutionSpace
-    del_diac::Vector{Bool}
-    del_dup::Vector{Bool}
-    del_punc::Vector{Bool}
+@with_kw struct TextConfigSpace <: AbstractSolutionSpace
+    del_diac = [true]
+    del_dup = [false]
+    del_punc = [false]
 
-    group_num::Vector{Bool}
-    group_url::Vector{Bool}
-    group_usr::Vector{Bool}
-    group_emo::Vector{Bool}
+    group_num = [true]
+    group_url = [true]
+    group_usr = [true]
+    group_emo = [false]
 
-    lc::Vector{Bool}
-    qlist::Vector{Vector{Int}}
-    nlist::Vector{Vector{Int}}
-    slist::Vector{Vector{Skipgram}}
+    lc = [true]
+    qlist = QLIST
+    nlist = NLIST
+    slist = SLIST
 end
 
 StructTypes.StructType(::Type{TextConfigSpace}) = StructTypes.Struct()
 Base.eltype(::TextConfigSpace) = TextConfig
-
-TextConfigSpace(;
-    del_diac::Vector=[true],
-    del_dup::Vector=[false],
-    del_punc::Vector=[false],
-
-    group_num::Vector=[true],
-    group_url::Vector=[true],
-    group_usr::Vector=[true],
-    group_emo::Vector=[false],
-
-    lc::Vector=[true],
-    qlist::Vector=QLIST,
-    nlist::Vector=NLIST,
-    slist::Vector=SLIST
-) = TextConfigSpace(del_diac, del_dup, del_punc, group_num, group_url, group_usr, group_emo, lc, qlist, nlist, slist)
 
 function random_configuration(space::TextConfigSpace)
     TextConfig(

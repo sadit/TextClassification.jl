@@ -6,22 +6,19 @@ export LiblinearConfig, LiblinearConfigSpace
 using LIBLINEAR
 StructTypes.StructType(::Type{<:LIBLINEAR.LinearModel}) = StructTypes.Struct()
 
-struct LiblinearConfig
-    C::Float64
-    eps::Float64
+@with_kw struct LiblinearConfig
+    C::Float64 = 1.0
+    eps::Float64 = 0.1
 end
 
 StructTypes.StructType(::Type{LiblinearConfig}) = StructTypes.Struct()
 
-struct LiblinearConfigSpace <: AbstractSolutionSpace
-    C::Vector{Float64}
-    eps::Vector{Float64}
+@with_kw struct LiblinearConfigSpace <: AbstractSolutionSpace
+    C = [1.0]
+    eps = [0.1, 0.01]
+    scale_C = (lower=0.001, s=3.0, upper=1000.0)
+    scale_eps = (lower=0.001, s=3.0, upper=0.9)
 end
-
-LiblinearConfigSpace(;
-    C=[10.0, 1.0, 0.1, 0.01],
-    eps=[0.1, 0.01]
-) = LiblinearConfigSpace(C, eps)
 
 Base.eltype(::LiblinearConfigSpace) = LiblinearConfig
 
@@ -34,7 +31,10 @@ function combine_configurations(a::LiblinearConfig, b::LiblinearConfig)
 end
 
 function mutate_configuration(space::LiblinearConfigSpace, a::LiblinearConfig, iter)
-    LiblinearConfig(SearchModels.scale(a.C, 10.0), SearchModels.scale(a.eps, 10.0))
+    LiblinearConfig(
+        SearchModels.scale(a.C; space.scale_C...),
+        SearchModels.scale(a.eps; space.scale_eps...)
+    )
 end
 
 function predict(cls::LIBLINEAR.LinearModel, vec::SVEC)

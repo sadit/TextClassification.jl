@@ -18,4 +18,7 @@ makedocs(;
 
 deploydocs(;
     repo="github.com/sadit/TextClassification.jl",
+    devbranch="main",
+    branch = "gh-pages",
+    versions = ["stable" => "v^", "v#.#.#"]
 )

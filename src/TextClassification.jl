@@ -2,15 +2,9 @@
 # License is Apache 2.0: https://www.apache.org/licenses/LICENSE-2.0.txt
 
 module TextClassification
-using SimilaritySearch
-using KCenters
-using StructTypes
-using KNearestCenters
-using TextSearch
-
-using CategoricalArrays
-using SearchModels
+using SimilaritySearch, KCenters, KNearestCenters, TextSearch, SearchModels
 import SearchModels: random_configuration, combine_configurations, mutate_configuration, config_type
+using StructTypes, Parameters, CategoricalArrays
 
 include("centerselection.jl")
 include("textconfigspace.jl")

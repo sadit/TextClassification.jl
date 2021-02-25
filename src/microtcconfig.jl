@@ -39,20 +39,25 @@ function MicroTC_KncConfigSpace(;
         centerselection=[
             CentroidSelection(),
             MedoidSelection(dist=CosineDistance()),
-            KnnCentroidSelection(sel=CentroidSelection(), dist=CosineDistance())
+            KnnCentroidSelection(sel1=CentroidSelection(), sel2=CentroidSelection(), dist=CosineDistance())
         ],
     )
     KncConfigSpace(
         centerselection=centerselection,
-        kernel=kernel,
-        k=k,
-        maxiters=maxiters,
-        recall=recall,
-        ncenters=ncenters,
-        initial_clusters=initial_clusters,
-        split_entropy=split_entropy,
-        minimum_elements_per_region=minimum_elements_per_region
+        kernel=kernel
     )
+    ## KncConfigSpace(
+    ##     centerselection=centerselection,
+    ##     kernel=kernel,
+    ##     k=k,
+    ##     maxiters=maxiters,
+    ##     recall=recall,
+    ##     ncenters=ncenters,
+    ##     initial_clusters=initial_clusters,
+    ##     split_entropy=split_entropy,
+    ##     minimum_elements_per_region=minimum_elements_per_region
+    ## )
+
 end
 
 function MicroTC_ConfigSpace(;
@@ -60,7 +65,7 @@ function MicroTC_ConfigSpace(;
         cls=[
             MicroTC_KncConfigSpace(),
             LiblinearConfigSpace(),
-            KnnClassifierConfigSpace([1, 5, 11], [30, 100, typemax(Int)])
+            KnnClassifierConfigSpace(k=1:2:33, keeptop=0.01:0.01:1.0)
         ],
         textconfig::TextConfigSpace = TextConfigSpace()
     )
