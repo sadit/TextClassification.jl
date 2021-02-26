@@ -27,45 +27,20 @@ end
 
 Base.eltype(::MicroTC_ConfigSpace) = MicroTC_Config
 
-function MicroTC_KncConfigSpace(;
+function MicroTC_ConfigSpace(;
         kernel=[k_(CosineDistance()) for k_ in [DirectKernel, ReluKernel]],
-        k::Vector=[1],
-        maxiters::Vector=[1, 3, 10],
-        recall::Vector=[1.0],
-        ncenters::Vector=[-7, 0, 7],
-        initial_clusters::Vector=[:fft, :dnet, :rand],
-        split_entropy::Vector=[0.3, 0.6],
-        minimum_elements_per_region::Vector=[1, 3, 5],
         centerselection=[
             CentroidSelection(),
             MedoidSelection(dist=CosineDistance()),
             KnnCentroidSelection(sel1=CentroidSelection(), sel2=CentroidSelection(), dist=CosineDistance())
         ],
-    )
-    KncConfigSpace(
-        centerselection=centerselection,
-        kernel=kernel
-    )
-    ## KncConfigSpace(
-    ##     centerselection=centerselection,
-    ##     kernel=kernel,
-    ##     k=k,
-    ##     maxiters=maxiters,
-    ##     recall=recall,
-    ##     ncenters=ncenters,
-    ##     initial_clusters=initial_clusters,
-    ##     split_entropy=split_entropy,
-    ##     minimum_elements_per_region=minimum_elements_per_region
-    ## )
-
-end
-
-function MicroTC_ConfigSpace(;
+        ncenters=[3, 7],
         textmodel=[EntModelConfigSpace(), VectorModelConfigSpace()],
         cls=[
-            MicroTC_KncConfigSpace(),
+            #KncConfigSpace(centerselection=centerselection, kernel=kernel),
+            #KncPerClassConfigSpace{0.3}(centerselection=centerselection, kernel=kernel, ncenters=ncenters),
             LiblinearConfigSpace(),
-            KnnClassifierConfigSpace(k=1:2:33, keeptop=0.01:0.01:1.0)
+            KnnClassifierConfigSpace(k=1:2:11, keeptop=0.5:0.1:1.0)
         ],
         textconfig::TextConfigSpace = TextConfigSpace()
     )

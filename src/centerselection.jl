@@ -18,5 +18,5 @@ function center(sel::KnnCentroidSelection, lst::AbstractVector{DVEC{Ti,Tv}}) whe
     c = center(sel.sel1, lst)
     seq = ExhaustiveSearch(sel.dist, lst)
     k = sel.k == 0 ? ceil(Int32, log2(length(lst))) : sel.k
-    TextSearch.normalize!(TextSearch.sum(lst[[p.id for p in search(seq, c, k)]]))
+    center(sel.sel2, lst[[p.id for p in search(seq, c, k)]])
 end

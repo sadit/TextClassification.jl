@@ -14,10 +14,10 @@ end
 StructTypes.StructType(::Type{LiblinearConfig}) = StructTypes.Struct()
 
 @with_kw struct LiblinearConfigSpace <: AbstractSolutionSpace
-    C = [1.0]
-    eps = [0.1, 0.01]
+    C = [0.01, 0.1, 1.0, 10.0, 100.0]
+    eps = [0.1, 0.01, 0.001]
     scale_C = (lower=0.001, s=3.0, upper=1000.0)
-    scale_eps = (lower=0.001, s=3.0, upper=0.9)
+    scale_eps = (lower=0.0001, s=3.0, upper=0.9)
 end
 
 Base.eltype(::LiblinearConfigSpace) = LiblinearConfig

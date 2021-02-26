@@ -1,6 +1,7 @@
 using Test, StatsBase, SearchModels, KCenters, KNearestCenters, TextSearch, TextClassification, CategoricalArrays
 using CSV, Random, MLDataUtils, JSON3
 
+Random.seed!(1)
 function train_test_split(corpus, labels, at=0.7)
     n = length(corpus)
     iX = shuffle!(collect(1:n))
@@ -58,8 +59,8 @@ end
 
     best_list = search_models(space, error_function, 16;
         # search hyper-parameters
-        bsize=16, mutbsize=8, crossbsize=8,
-        tol=0.01, maxiters=4, verbose=true)
+        bsize=8, mutbsize=8, crossbsize=8,
+        tol=0.0, maxiters=8, verbose=true)
 
     for (i, b) in enumerate(best_list)
         @info "-- perf best_lists[$i]:", i, b[1], b[2]

@@ -23,24 +23,28 @@ Base.copy(c::MicroTC; config=c.config, cls=c.cls, textmodel=c.textmodel) = Micro
 Base.broadcastable(tc::MicroTC) = (tc,)
 
 """
-    create_textmodel(config::MicroTC_Config, train_X::AbstractVector{BOW}, train_y::CategoricalArray)
+    create(config, train_X, train_y)
 
-Creates a text model based on the dataset and the given configuration
+Creates a new object from a configuration and a train / test datasets.
+
+- text models receive an array of BOW objects
+- classifiers an array of SVEC objects
 """
-function create_textmodel(config::MicroTC_Config, train_X::AbstractVector{BOW}, train_y::CategoricalArray)
-    c = config.textmodel
-    model = if c isa EntModelConfig
-        EntModel(c.weighting, train_X, train_y, smooth=c.smooth, minocc=c.minocc, weights=c.classweights)
-    else
-        VectorModel(c.weighting, sum(train_X), minocc=c.minocc)
-    end
-
-    if c.keeptop < 1.0
-        model = prune_select_top(model, c.keeptop)
-    end
-
-    model
+function create(c::EntModelConfig, train_X::AbstractVector{BOW}, train_y::CategoricalArray)
+    model = EntModel(c.weighting, train_X, train_y, smooth=c.smooth, minocc=c.minocc, weights=c.classweights)
+    c.keeptop < 1.0 ? prune_select_top(model, c.keeptop) : model
 end
+
+function create(c::VectorModelConfig, train_X::AbstractVector{BOW}, train_y::CategoricalArray)
+    model = VectorModel(c.weighting, sum(train_X), minocc=c.minocc)
+    c.keeptop < 1.0 ? prune_select_top(model, c.keeptop) : model
+end
+
+create(config::KncConfig, train_X, train_y, dim) = Knc(config, train_X, train_y)
+create(config::KncProtoConfig, train_X, train_y, dim) = KncProto(config, train_X, train_y)
+create(config::KnnClassifierConfig, train_X, train_y, dim) = KnnClassifier(config, train_X, train_y)
+create(config::LiblinearConfig, train_X, train_y, dim) =
+    linear_train(train_y.refs, sparse(train_X, dim); C=config.C, eps=config.eps)
 
 """
     MicroTC(config::MicroTC_Config, train_corpus::AbstractVector, train_y::CategoricalArray; verbose=true)
@@ -50,19 +54,12 @@ Creates a MicroTC model on the given dataset and configuration
 """
 function MicroTC(config::MicroTC_Config, train_corpus::AbstractVector, train_y::CategoricalArray; verbose=true)
     train_corpus_bow = [compute_bow(config.textconfig, text) for text in train_corpus]
-    textmodel = create_textmodel(config, train_corpus_bow, train_y)
+    textmodel = create(config.textmodel, train_corpus_bow, train_y)
     MicroTC(config, textmodel, [vectorize(textmodel, bow) for bow in train_corpus_bow], train_y)
 end
 
 function MicroTC(config::MicroTC_Config, textmodel::TextModel, train_X::AbstractVector{S}, train_y::CategoricalArray; verbose=true) where {S<:SVEC}
-    cls = if config.cls isa KncConfig
-        Knc(config.cls, train_X, train_y)
-    elseif config.cls isa KnnClassifierConfig
-        KnnClassifier(config.cls, train_X, train_y)
-    else
-        linear_train(train_y.refs, sparse(train_X, textmodel.m); C=config.cls.C, eps=config.cls.eps)
-    end
-
+    cls = create(config.cls, train_X, train_y, textmodel.m)
     MicroTC(config, cls, textmodel)
 end
 

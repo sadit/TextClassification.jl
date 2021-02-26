@@ -14,7 +14,7 @@ end
 StructTypes.StructType(::Type{<:EntModelConfig}) = StructTypes.Struct()
 
 @with_kw struct EntModelConfigSpace <: AbstractSolutionSpace
-    weighting = [EntWeighting(), EntTpWeighting(), EntTpWeighting()]
+    weighting = [EntWeighting(), EntTpWeighting(), EntTpWeighting(), EntFreqWeighting()]
     minocc = 1:3:11
     keeptop = 0.01:0.1:1.0
     smooth = 0.0:0.3:7.0
@@ -71,11 +71,11 @@ end
 StructTypes.StructType(::Type{<:VectorModelConfig}) = StructTypes.Struct()
 
 @with_kw struct VectorModelConfigSpace <: AbstractSolutionSpace
-    weighting = [TfWeighting(), IdfWeighting(), TfidfWeighting(), FreqWeighting()]
-    minocc = 1:3:11
-    keeptop = 0.01:0.1:1.0
-    scale_minocc = (lower=1, s=1.5, upper=30)
-    scale_keeptop = (lower=0.01, s=1.5, upper=1.0)
+    weighting = [TfWeighting(), IdfWeighting(), TfidfWeighting(), TpWeighting(), FreqWeighting()]
+    minocc = 1:5
+    keeptop = 0.1:0.15:1.0
+    scale_minocc = (lower=1, s=1.3, upper=30)
+    scale_keeptop = (lower=0.01, s=1.3, upper=1.0)
 end
 
 Base.eltype(::VectorModelConfigSpace) = VectorModelConfig
