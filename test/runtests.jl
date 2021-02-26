@@ -57,10 +57,11 @@ end
         )
     )
 
-    best_list = search_models(space, error_function, 16;
+    best_list = search_models(space, error_function, 32;
+        maxpopulation=16,
         # search hyper-parameters
         bsize=8, mutbsize=8, crossbsize=8,
-        tol=0.0, maxiters=8, verbose=true)
+        tol=0.0, maxiters=30, verbose=true)
 
     for (i, b) in enumerate(best_list)
         @info "-- perf best_lists[$i]:", i, b[1], b[2]

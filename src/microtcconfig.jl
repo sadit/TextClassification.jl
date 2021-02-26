@@ -37,7 +37,7 @@ function MicroTC_ConfigSpace(;
         ncenters=[3, 7],
         textmodel=[EntModelConfigSpace(), VectorModelConfigSpace()],
         cls=[
-            #KncConfigSpace(centerselection=centerselection, kernel=kernel),
+            KncConfigSpace(centerselection=centerselection, kernel=kernel),
             #KncPerClassConfigSpace{0.3}(centerselection=centerselection, kernel=kernel, ncenters=ncenters),
             LiblinearConfigSpace(),
             KnnClassifierConfigSpace(k=1:2:11, keeptop=0.5:0.1:1.0)
