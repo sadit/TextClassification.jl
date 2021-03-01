@@ -23,23 +23,14 @@ Base.copy(c::MicroTC; config=c.config, cls=c.cls, textmodel=c.textmodel) = Micro
 Base.broadcastable(tc::MicroTC) = (tc,)
 
 """
-    create(config, train_X, train_y)
+    create(config, train_X, train_y) # config describes a text model
+    create(config, train_X, train_y, dim) # config describes a classifier
 
 Creates a new object from a configuration and a train / test datasets.
 
-- text models receive an array of BOW objects
-- classifiers an array of SVEC objects
+- train_X is an array of BOW objects for text models
+- train_X is an array of SVEC objects for classifiers
 """
-function create(c::EntModelConfig, train_X::AbstractVector{BOW}, train_y::CategoricalArray)
-    model = EntModel(c.weighting, train_X, train_y, smooth=c.smooth, minocc=c.minocc, weights=c.classweights)
-    c.keeptop < 1.0 ? prune_select_top(model, c.keeptop) : model
-end
-
-function create(c::VectorModelConfig, train_X::AbstractVector{BOW}, train_y::CategoricalArray)
-    model = VectorModel(c.weighting, sum(train_X), minocc=c.minocc)
-    c.keeptop < 1.0 ? prune_select_top(model, c.keeptop) : model
-end
-
 create(config::KncConfig, train_X, train_y, dim) = Knc(config, train_X, train_y)
 create(config::KncProtoConfig, train_X, train_y, dim) = KncProto(config, train_X, train_y)
 create(config::KnnClassifierConfig, train_X, train_y, dim) = KnnClassifier(config, train_X, train_y)
