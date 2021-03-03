@@ -117,8 +117,8 @@ end
 function mutate_configuration(space::VectorModelConfigSpace, c::VectorModelConfig, iter)
     minocc = SearchModels.scale(c.minocc; space.scale_minocc...)
     keeptop = SearchModels.scale(c.keeptop; space.scale_keeptop...)
-    lw = rand() < 0.1 ? rand(space.local_weighting) : c.local_weighting
-    gw = rand() < 0.1 ? rand(space.global_weighting) : c.global_weighting
+    lw = SearchModels.change(c.local_weighting, space.local_weighting, p1=0.3)
+    gw = SearchModels.change(c.global_weighting, space.global_weighting, p1=0.3)
 
     VectorModelConfig(lw, gw, minocc, keeptop)
 end
