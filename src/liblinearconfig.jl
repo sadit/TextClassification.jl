@@ -13,9 +13,12 @@ end
 
 StructTypes.StructType(::Type{LiblinearConfig}) = StructTypes.Struct()
 
+create(config::LiblinearConfig, train_X, train_y, dim) =
+    linear_train(train_y.refs, sparse(train_X, dim); C=config.C, eps=config.eps, bias=1.0)
+
 @with_kw struct LiblinearConfigSpace <: AbstractSolutionSpace
-    C = [0.01, 0.1, 1.0, 10.0, 100.0]
-    eps = [0.1, 0.01, 0.001]
+    C = [1.0]
+    eps = [0.1]
     scale_C = (lower=0.001, s=3.0, upper=1000.0)
     scale_eps = (lower=0.0001, s=3.0, upper=0.9)
 end

@@ -10,9 +10,11 @@ end
 
 StructTypes.StructType(::Type{<:KnnClassifierConfig}) = StructTypes.Struct()
 
+create(config::KnnClassifierConfig, train_X, train_y, dim) = KnnClassifier(config, train_X, train_y)
+
 @with_kw struct KnnClassifierConfigSpace <: AbstractSolutionSpace
-    k=1:2:7 # rand(k)  -> integer
-    keeptop=0.3:0.1:1.0 # rand(keeptop) -> float
+    k=[1, 5]
+    keeptop=[0.5, 1.0]
     scale_k = (lower=1, s=1.5, upper=100)
     scale_keeptop = (lower=0.001, s=1.5, upper=1.0)
 end

@@ -21,7 +21,7 @@ end
 
 struct MicroTC_ConfigSpace <: AbstractSolutionSpace
     textconfig::TextConfigSpace
-    textmodel #Union{Vector,AbstractSolutionSpace}
+    textmodel
     cls
 end
 

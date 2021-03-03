@@ -18,6 +18,13 @@ struct MicroTC{C_<:MicroTC_Config, CLS_<:Any, TextModel_<:TextModel}
 end
 
 StructTypes.StructType(::Type{<:MicroTC}) = StructTypes.Struct()
+function Base.show(io::IO, model::MicroTC) 
+    print(io, "{MicroTC ")
+    show(io, model.config)
+    show(io, model.cls)
+    show(io, model.textmodel)
+    print(io, "}")
+end
 
 Base.copy(c::MicroTC; config=c.config, cls=c.cls, textmodel=c.textmodel) = MicroTC(config, cls, textmodel)
 Base.broadcastable(tc::MicroTC) = (tc,)
@@ -33,9 +40,6 @@ Creates a new object from a configuration and a train / test datasets.
 """
 create(config::KncConfig, train_X, train_y, dim) = Knc(config, train_X, train_y)
 create(config::KncProtoConfig, train_X, train_y, dim) = KncProto(config, train_X, train_y)
-create(config::KnnClassifierConfig, train_X, train_y, dim) = KnnClassifier(config, train_X, train_y)
-create(config::LiblinearConfig, train_X, train_y, dim) =
-    linear_train(train_y.refs, sparse(train_X, dim); C=config.C, eps=config.eps)
 
 """
     MicroTC(config::MicroTC_Config, train_corpus::AbstractVector, train_y::CategoricalArray; verbose=true)

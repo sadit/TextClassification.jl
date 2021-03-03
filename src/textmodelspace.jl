@@ -9,23 +9,22 @@ export EntModelConfigSpace, VectorModelConfigSpace
     minocc::Int = 1
     smooth::Float64 = 1.0
     keeptop::Float64 = 1.0
-    classweights = :balance
+    weights::Union{Symbol,Vector{Float64}} = :balance
 end
 
 StructTypes.StructType(::Type{<:EntModelConfig}) = StructTypes.Struct()
 
 function create(c::EntModelConfig, train_X::AbstractVector{BOW}, train_y::CategoricalArray)
-    ent = EntropyWeighting(smooth=c.smooth, lowerweight=0.0, weights=c.classweights)
-    model = VectorModel(c.local_weighting, ent, train_X, train_y, minocc=c.minocc)
+    model = VectorModel(c.local_weighting, EntropyWeighting(), train_X, train_y, minocc=c.minocc, smooth=c.smooth, lowerweight=0.0, weights=c.weights)
     c.keeptop < 1.0 ? prune_select_top(model, c.keeptop) : model
 end
 
 @with_kw struct EntModelConfigSpace <: AbstractSolutionSpace
     local_weighting = [TfWeighting(), TpWeighting(), FreqWeighting(), BinaryLocalWeighting()]
-    minocc = 1:2:11
-    keeptop = 0.5:0.1:1.0
-    smooth = 0.0:1.0:7.0
-    classweights = [:balance, :none]
+    minocc = [1, 3, 5]
+    keeptop = [0.5, 1.0]
+    smooth = [1.0, 3.0]
+    weights = [:balance, :none]
     scale_minocc = (lower=1, s=1.3, upper=30)
     scale_keeptop = (lower=0.01, s=1.1, upper=1.0)
     scale_smooth = (lower=0.0, s=1.1, upper=30.0)
@@ -39,7 +38,7 @@ function random_configuration(space::EntModelConfigSpace)
         rand(space.minocc),
         rand(space.smooth),
         rand(space.keeptop),
-        rand(space.classweights)
+        rand(space.weights)
     )
 end
 
@@ -51,7 +50,7 @@ function combine_configurations(a::EntModelConfig, b::EntModelConfig)
         rand(L).minocc,
         rand(L).smooth,
         rand(L).keeptop,
-        rand(L).classweights
+        rand(L).weights
     )
 end
 
@@ -59,13 +58,14 @@ function mutate_configuration(space::AbstractSolutionSpace, c::EntModelConfig, i
     minocc = SearchModels.scale(c.minocc; space.scale_minocc...)
     smooth = SearchModels.scale(c.smooth; space.scale_smooth...)
     keeptop = SearchModels.scale(c.keeptop; space.scale_keeptop...)
+    lw = rand() < 0.3 ? rand(space.local_weighting) : c.local_weighting
 
     EntModelConfig(
-        c.local_weighting,
+        lw,
         minocc,
         smooth,
         keeptop,
-        c.classweights
+        c.weights
     )
 end
 
@@ -86,8 +86,8 @@ end
 @with_kw struct VectorModelConfigSpace <: AbstractSolutionSpace
     local_weighting = [TfWeighting(), TpWeighting(), FreqWeighting(), BinaryLocalWeighting()]
     global_weighting = [IdfWeighting(), BinaryGlobalWeighting()]
-    minocc = 1:5
-    keeptop = 0.5:0.1:1.0
+    minocc = [1, 3, 5]
+    keeptop = [0.5, 1.0]
     scale_minocc = (lower=1, s=1.3, upper=30)
     scale_keeptop = (lower=0.01, s=1.3, upper=1.0)
 end
@@ -107,15 +107,18 @@ function combine_configurations(a::VectorModelConfig, b::VectorModelConfig)
     L = [a, b]
 
     VectorModelConfig(
-        rand(L).local_weighting,
-        rand(L).global_weighting,
-        rand(L).minocc,
-        rand(L).keeptop
+        a.local_weighting,
+        b.global_weighting,
+        div(a.minocc + b.minocc, 2),
+        (a.keeptop + b.keeptop) / 2
     )
 end
 
-function mutate_configuration(space::AbstractSolutionSpace, c::VectorModelConfig, iter)
+function mutate_configuration(space::VectorModelConfigSpace, c::VectorModelConfig, iter)
     minocc = SearchModels.scale(c.minocc; space.scale_minocc...)
     keeptop = SearchModels.scale(c.keeptop; space.scale_keeptop...)
-    VectorModelConfig(c.local_weighting, c.global_weighting, minocc, keeptop)
+    lw = rand() < 0.1 ? rand(space.local_weighting) : c.local_weighting
+    gw = rand() < 0.1 ? rand(space.global_weighting) : c.global_weighting
+
+    VectorModelConfig(lw, gw, minocc, keeptop)
 end
