@@ -58,9 +58,9 @@ end
     )
 
     best_list = search_models(space, error_function, 32;
-        maxpopulation=16,
+        maxpopulation=8,
         # search hyper-parameters
-        bsize=8, mutbsize=8, crossbsize=8,
+        bsize=2, mutbsize=8, crossbsize=8,
         tol=0.0, maxiters=30, verbose=true)
 
     for (i, b) in enumerate(best_list)
