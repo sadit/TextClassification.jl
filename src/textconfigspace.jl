@@ -40,6 +40,7 @@ function random_configuration(space::TextConfigSpace)
     if length(qlist) + length(nlist) + length(slist) == 0
         nlist = [1]
     end
+
     TextConfig(
         rand(space.del_diac),
         rand(space.del_dup),
@@ -105,6 +106,7 @@ function mutate_configuration(space::TextConfigSpace, c::TextConfig, iter)
     if length(qlist) + length(nlist) + length(slist) == 0
         nlist = [1]
     end
+    
     TextConfig(
         SearchModels.change(c.del_diac, space.del_diac),
         SearchModels.change(c.del_dup, space.del_dup),
