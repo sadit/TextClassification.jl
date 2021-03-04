@@ -61,10 +61,14 @@ end
 function combine_configurations(a::TextConfig, b::TextConfig)
     L = [a, b]
 
-    qlist = union(a.qlist, b.qlist)
-    nlist = union(a.nlist, b.nlist)
-    slist = union(a.slist, b.slist)
+    qlist = rand() < 0.5 ? union(a.qlist, b.qlist) : intersect(a.qlist, b.qlist)
+    nlist = rand() < 0.5 ? union(a.nlist, b.nlist) : intersect(a.nlist, b.nlist)
+    slist = rand() < 0.5 ? union(a.slist, b.slist) : intersect(a.slist, b.slist)
 
+    if length(qlist) + length(nlist) + length(slist) == 0
+        nlist = [1]
+    end
+    
     TextConfig(
         rand(L).del_diac,
         rand(L).del_dup,
@@ -74,9 +78,9 @@ function combine_configurations(a::TextConfig, b::TextConfig)
         rand(L).group_usr,
         rand(L).group_emo,
         rand(L).lc,
-        qlist, 
-        nlist,
-        slist
+        sort!(qlist), 
+        sort!(nlist),
+        sort!(slist)
     )
 end
 

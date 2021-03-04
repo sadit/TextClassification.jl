@@ -21,6 +21,7 @@ create(config::LiblinearConfig, train_X, train_y, dim) =
     eps = [0.1]
     scale_C = (lower=0.001, s=3.0, upper=1000.0)
     scale_eps = (lower=0.0001, s=3.0, upper=0.9)
+    mutate_after_iter = 3
 end
 
 Base.eltype(::LiblinearConfigSpace) = LiblinearConfig
@@ -34,10 +35,14 @@ function combine_configurations(a::LiblinearConfig, b::LiblinearConfig)
 end
 
 function mutate_configuration(space::LiblinearConfigSpace, a::LiblinearConfig, iter)
-    LiblinearConfig(
-        SearchModels.scale(a.C; space.scale_C...),
-        SearchModels.scale(a.eps; space.scale_eps...)
-    )
+    if iter < space.mutate_after_iter
+        a
+    else
+        LiblinearConfig(
+            SearchModels.scale(a.C; space.scale_C...),
+            SearchModels.scale(a.eps; space.scale_eps...)
+        )
+    end
 end
 
 function predict(cls::LIBLINEAR.LinearModel, vec::SVEC)

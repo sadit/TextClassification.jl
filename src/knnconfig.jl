@@ -14,9 +14,9 @@ create(config::KnnClassifierConfig, train_X, train_y, dim) = KnnClassifier(confi
 
 @with_kw struct KnnClassifierConfigSpace <: AbstractSolutionSpace
     k=[1, 5]
-    keeptop=[0.5, 1.0]
+    keeptop=[1.0]
     scale_k = (lower=1, s=1.5, upper=100)
-    scale_keeptop = (lower=0.001, s=1.5, upper=1.0)
+    scale_keeptop = (lower=1.0, s=1.5, upper=1.0)
 end
 
 Base.eltype(::KnnClassifierConfigSpace) = KnnClassifierConfig
