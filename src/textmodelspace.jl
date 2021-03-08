@@ -21,12 +21,12 @@ end
 
 @with_kw struct EntModelConfigSpace <: AbstractSolutionSpace
     local_weighting = [TfWeighting(), TpWeighting(), FreqWeighting(), BinaryLocalWeighting()]
-    mindocs = [1, 3, 5, 7]
-    smooth = [0.0] # by default=1 in favor of mindocs
+    mindocs = 1:5
+    smooth = 0:3 # by default=1 in favor of mindocs
     keeptop = [0.5, 1.0]
     weights = [:balance, :none]
-    scale_mindocs = (lower=1, s=1.3, upper=30)
-    scale_smooth = (lower=0.0, s=1.0, upper=0.0)  # default values left smooth untouched
+    scale_mindocs = (lower=1, s=1.3, upper=11)
+    scale_smooth = (lower=0.0, s=1.3, upper=11)  # default values left smooth untouched
     scale_keeptop = (lower=0.01, s=1.1, upper=1.0)
 end
 
