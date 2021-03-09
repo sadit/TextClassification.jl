@@ -32,7 +32,7 @@ end
 
 Base.eltype(::EntModelConfigSpace) = EntModelConfig
 
-function random_configuration(space::EntModelConfigSpace)
+function Base.rand(space::EntModelConfigSpace)
     EntModelConfig(
         rand(space.local_weighting),
         rand(space.mindocs),
@@ -42,7 +42,7 @@ function random_configuration(space::EntModelConfigSpace)
     )
 end
 
-function combine_configurations(a::EntModelConfig, b::EntModelConfig)
+function combine(a::EntModelConfig, b::EntModelConfig)
     EntModelConfig(
         a.local_weighting,
         div(a.mindocs + b.mindocs, 2),
@@ -52,7 +52,7 @@ function combine_configurations(a::EntModelConfig, b::EntModelConfig)
     )
 end
 
-function mutate_configuration(space::AbstractSolutionSpace, c::EntModelConfig, iter)
+function mutate(space::EntModelConfigSpace, c::EntModelConfig, iter)
     mindocs = SearchModels.scale(c.mindocs; space.scale_mindocs...)
     smooth = SearchModels.scale(c.smooth; space.scale_smooth...)
     keeptop = SearchModels.scale(c.keeptop; space.scale_keeptop...)
@@ -92,7 +92,7 @@ end
 
 Base.eltype(::VectorModelConfigSpace) = VectorModelConfig
 
-function random_configuration(space::VectorModelConfigSpace)
+function Base.rand(space::VectorModelConfigSpace)
     VectorModelConfig(
         rand(space.global_weighting),
         rand(space.local_weighting),
@@ -101,7 +101,7 @@ function random_configuration(space::VectorModelConfigSpace)
     )
 end
 
-function combine_configurations(a::VectorModelConfig, b::VectorModelConfig)
+function combine(a::VectorModelConfig, b::VectorModelConfig)
     VectorModelConfig(
         b.global_weighting,
         a.local_weighting,
@@ -110,7 +110,7 @@ function combine_configurations(a::VectorModelConfig, b::VectorModelConfig)
     )
 end
 
-function mutate_configuration(space::VectorModelConfigSpace, c::VectorModelConfig, iter)
+function mutate(space::VectorModelConfigSpace, c::VectorModelConfig, iter)
     mindocs = SearchModels.scale(c.mindocs; space.scale_mindocs...)
     keeptop = SearchModels.scale(c.keeptop; space.scale_keeptop...)
     lw = SearchModels.change(c.local_weighting, space.local_weighting, p1=0.3)

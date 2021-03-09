@@ -32,7 +32,7 @@ end
 StructTypes.StructType(::Type{TextConfigSpace}) = StructTypes.Struct()
 Base.eltype(::TextConfigSpace) = TextConfig
 
-function random_configuration(space::TextConfigSpace)
+function Base.rand(space::TextConfigSpace)
     qlist = isempty(space.qlist) ? Int[] : rand(space.qlist)
     nlist = isempty(space.nlist) ? Int[] : rand(space.nlist)
     slist = isempty(space.slist) ? Skipgram[] : rand(space.slist)
@@ -58,7 +58,7 @@ function random_configuration(space::TextConfigSpace)
     )
 end
 
-function combine_configurations(a::TextConfig, b::TextConfig)
+function combine(a::TextConfig, b::TextConfig)
     L = [a, b]
 
     qlist = rand() < 0.5 ? union(a.qlist, b.qlist) : intersect(a.qlist, b.qlist)
@@ -103,7 +103,7 @@ function mutate_token_list(lst, L; p1=0.5, p2=0.5)
     lst
 end
 
-function mutate_configuration(space::TextConfigSpace, c::TextConfig, iter)
+function mutate(space::TextConfigSpace, c::TextConfig, iter)
     qlist = mutate_token_list(c.qlist, space.qlist_space)
     nlist = mutate_token_list(c.nlist, space.nlist_space)
     slist = mutate_token_list(c.slist, space.slist_space)

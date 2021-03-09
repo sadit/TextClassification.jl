@@ -25,15 +25,15 @@ end
 
 Base.eltype(::LiblinearConfigSpace) = LiblinearConfig
 
-function random_configuration(space::LiblinearConfigSpace)
+function Base.rand(space::LiblinearConfigSpace)
     LiblinearConfig(rand(space.C), rand(space.eps))
 end
 
-function combine_configurations(a::LiblinearConfig, b::LiblinearConfig)
+function combine(a::LiblinearConfig, b::LiblinearConfig)
     LiblinearConfig(a.C, b.eps)
 end
 
-function mutate_configuration(space::LiblinearConfigSpace, a::LiblinearConfig, iter)
+function mutate(space::LiblinearConfigSpace, a::LiblinearConfig, iter)
     LiblinearConfig(
         SearchModels.scale(a.C; space.scale_C...),
         SearchModels.scale(a.eps; space.scale_eps...)

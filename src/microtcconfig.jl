@@ -50,28 +50,27 @@ function MicroTC_ConfigSpace(;
     MicroTC_ConfigSpace(textconfig, textmodel, cls)
 end
 
-function random_configuration(space::MicroTC_ConfigSpace)
+function Base.rand(space::MicroTC_ConfigSpace)
     T = space.textmodel isa AbstractArray ? rand(space.textmodel) : space.textmodel
     C = space.cls isa AbstractArray ? rand(space.cls) : space.cls
 
     MicroTC_Config(;
-        textconfig=random_configuration(space.textconfig),
-        textmodel=random_configuration(T),
-        cls=random_configuration(C)
+        textconfig=rand(space.textconfig),
+        textmodel=rand(T),
+        cls=rand(C)
     )
 end
 
-function mutate_configuration(space::MicroTC_ConfigSpace, c::MicroTC_Config, iter)
-    textconfig = mutate_configuration(space.textconfig, c.textconfig, iter)
-    textmodel = mutate_configuration(space.textmodel, c.textmodel, iter)
-    cls = mutate_configuration(space.cls, c.cls, iter)
+function mutate(space::MicroTC_ConfigSpace, c::MicroTC_Config, iter)
+    textconfig = mutate(space.textconfig, c.textconfig, iter)
+    textmodel = mutate(space.textmodel, c.textmodel, iter)
+    cls = mutate(space.cls, c.cls, iter)
     MicroTC_Config(textconfig=textconfig, textmodel=textmodel, cls=cls)
 end
 
-function combine_configurations(a::MicroTC_Config, L::AbstractVector)
-    textconfig = combine_configurations(a.textconfig, [b.first.textconfig => b.second for b in L])
-    textmodel = combine_configurations(a.textmodel, [b.first.textmodel => b.second for b in L])
-    cls = combine_configurations(a.cls, [b.first.cls => b.second for b in L])
-
+function combine_select(a::MicroTC_Config, L::AbstractVector)
+    textconfig = combine_select(a.textconfig, [b.first.textconfig => b.second for b in L])
+    textmodel = combine_select(a.textmodel, [b.first.textmodel => b.second for b in L])
+    cls = combine_select(a.cls, [b.first.cls => b.second for b in L])
     MicroTC_Config(textconfig=textconfig, textmodel=textmodel, cls=cls)
 end
