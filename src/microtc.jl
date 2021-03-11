@@ -2,7 +2,6 @@
 # License is Apache 2.0: https://www.apache.org/licenses/LICENSE-2.0.txt
 
 using MLDataUtils, LinearAlgebra
-import KNearestCenters: combine_configurations, random_configuration
 import TextSearch: vectorize
 import StatsBase: predict
 import Base: hash, isequal
