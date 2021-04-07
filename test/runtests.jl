@@ -34,7 +34,7 @@ end
         S = Float64[]
         for (_traincorpus, _trainlabels, _testcorpus, _testlabels) in folds
             tc = MicroTC(config, _traincorpus, _trainlabels; verbose=true)
-            valX = vectorize.(tc, _testcorpus)
+            valX = vectorize_corpus(tc, _testcorpus)
             ypred = predict.(tc, valX)
             push!(S, recall_score(_testlabels.refs, ypred, weight=:macro))
         end
@@ -68,17 +68,16 @@ end
     end
 
     cls = MicroTC(best_list[1][1], traincorpus, trainlabels)
-    sc = classification_scores(testlabels.refs, [predict(cls, t) for t in testcorpus])
+    sc = classification_scores(testlabels.refs, predict_corpus(cls, testcorpus))
     @info "*** Performance on test: " sc
     @test sc.accuracy > 0.6
 
     cls_ = JSON3.read(JSON3.write(cls), typeof(cls))
-    sc = classification_scores(testlabels.refs, [predict(cls_, t) for t in testcorpus])
+    sc = classification_scores(testlabels.refs, predict_corpus(cls, testcorpus))
     @info "*** Performance on test: " sc
     @test sc.accuracy > 0.6
 
 end
-
 
 # flush(stdout); flush(stderr)
 # sort!(P, :score, rev=true)
