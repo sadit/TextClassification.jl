@@ -85,7 +85,7 @@ function combine(a::TextConfig, b::TextConfig)
 end
 
 function mutate_token_list(lst, L; p1=0.5, p2=0.5)
-    if rand() < p1 
+    if length(L) == 0 || rand() < p1 
         return lst
     end
 

@@ -57,9 +57,7 @@ function MicroTC(
         train_y::CategoricalArray;
         tok=Tokenizer(config.textconfig, invmap=nothing),
         verbose=true)
-    @show :train_corpus_bow
-    @time train_corpus_bow = compute_bow_corpus(tok, train_corpus)
-    # @show :textmodel
+    train_corpus_bow = compute_bow_corpus(tok, train_corpus)
     textmodel = create(config.textmodel, train_corpus_bow, train_y)
     MicroTC(config, textmodel, [vectorize(textmodel, bow) for bow in train_corpus_bow], train_y, tok=tok)
 end
