@@ -59,7 +59,18 @@ function MicroTC(
         verbose=true)
     train_corpus_bow = compute_bow_corpus(tok, train_corpus)
     textmodel = create(config.textmodel, train_corpus_bow, train_y)
-    MicroTC(config, textmodel, [vectorize(textmodel, bow) for bow in train_corpus_bow], train_y, tok=tok)
+    X = SVEC[]
+    mask = Bool[]
+    for bow in train_corpus_bow
+        x = vectorize(textmodel, bow)
+        push!(mask, false)
+        length(x) == 1 && haskey(x, 0) && continue
+        push!(X, x)
+        mask[end] = true
+    end
+
+    @info "considering $(sum(mask)) of $(length(mask)) examples after vectorization"
+    MicroTC(config, textmodel, X, train_y[mask], tok=tok)
 end
 
 function MicroTC(
