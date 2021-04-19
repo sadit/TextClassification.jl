@@ -36,6 +36,7 @@ end
             tc = MicroTC(config, _traincorpus, _trainlabels; verbose=true)
             valX = vectorize_corpus(tc, _testcorpus)
             ypred = predict.(tc, valX)
+            #ypred = predict_corpus(tc, _testcorpus)
             push!(S, recall_score(_testlabels.refs, ypred, weight=:macro))
         end
 

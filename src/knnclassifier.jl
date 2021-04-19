@@ -19,7 +19,7 @@ create(config::KnnClassifierConfig, train_X, train_y, dim) = KnnClassifier(confi
     k=[1, 5]
     keeptop=[1.0]
     scale_k = (lower=1, s=1.5, upper=100)
-    scale_keeptop = (lower=1.0, s=1.5, upper=1.0)
+    scale_keeptop = (lower=0.1, s=1.5, upper=1.0)
 end
 
 Base.eltype(::KnnClassifierConfigSpace) = KnnClassifierConfig
@@ -34,10 +34,9 @@ function combine(a::KnnClassifierConfig, b::KnnClassifierConfig)
 end
 
 function mutate(space::AbstractSolutionSpace, a::KnnClassifierConfig, iter)
-    KnnClassifierConfig(
-        SearchModels.scale(a.k; space.scale_k...),
-        SearchModels.scale(a.keeptop; space.scale_keeptop...)
-    )
+    k = space.scale_k === nothing ? a.k : SearchModels.scale(a.k; space.scale_k...)
+    keeptop = space.scale_keeptop === nothing ? a.keeptop : SearchModels.scale(a.keeptop; space.scale_keeptop...)
+    KnnClassifierConfig(k, keeptop)
 end
 
 struct KnnClassifier

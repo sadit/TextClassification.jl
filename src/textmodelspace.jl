@@ -26,7 +26,7 @@ end
     keeptop = [0.5, 1.0]
     weights = [:balance, :none]
     scale_mindocs = (lower=1, s=1.3, upper=11)
-    scale_smooth = (lower=0.0, s=1.3, upper=11)  # default values left smooth untouched
+    scale_smooth = (lower=0.0, s=1.3, upper=11) 
     scale_keeptop = (lower=0.01, s=1.1, upper=1.0)
 end
 
@@ -53,11 +53,11 @@ function combine(a::EntModelConfig, b::EntModelConfig)
 end
 
 function mutate(space::EntModelConfigSpace, c::EntModelConfig, iter)
-    mindocs = SearchModels.scale(c.mindocs; space.scale_mindocs...)
-    smooth = SearchModels.scale(c.smooth; space.scale_smooth...)
-    keeptop = SearchModels.scale(c.keeptop; space.scale_keeptop...)
+    mindocs = space.scale_mindocs === nothing ? c.mindocs : SearchModels.scale(c.mindocs; space.scale_mindocs...)
+    smooth = space.scale_smooth === nothing ? c.smooth : SearchModels.scale(c.smooth; space.scale_smooth...)
+    keeptop = space.scale_keeptop === nothing ? c.keeptop : SearchModels.scale(c.keeptop; space.scale_keeptop...)
     lw = SearchModels.change(c.local_weighting, space.local_weighting, p1=0.3)
-
+    
     EntModelConfig(
         lw,
         mindocs,

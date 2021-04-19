@@ -21,8 +21,10 @@ StructTypes.StructType(::Type{LiblinearConfig}) = StructTypes.Struct()
 
 function create(config::LiblinearConfig, train_X, train_y, dim)
     map = Dict{UInt64,Int}()
+    map[0] = 1 # the vectorization procedure use the zero id as an special symbol
     train_X_ = [Dict(get!(map, k, length(map)+1) => v for (k, v) in x) for x in train_X]
-    cls = linear_train(train_y.refs, sparse(train_X_, dim); C=config.C, eps=config.eps, bias=1.0)
+    # dim + 1 for out-of-vocabulary tokens
+    cls = linear_train(train_y.refs, sparse(train_X_, dim + 1); C=config.C, eps=config.eps, bias=1.0)
     LibLinearWrapper(map, cls)
 end
 
@@ -44,14 +46,13 @@ function combine(a::LiblinearConfig, b::LiblinearConfig)
 end
 
 function mutate(space::LiblinearConfigSpace, a::LiblinearConfig, iter)
-    LiblinearConfig(
-        SearchModels.scale(a.C; space.scale_C...),
-        SearchModels.scale(a.eps; space.scale_eps...)
-    )
+    C = space.scale_C === nothing ? a.C : SearchModels.scale(a.C; space.scale_C...)
+    eps = space.scale_eps === nothing ? a.eps : SearchModels.scale(a.eps; space.scale_eps...)
+    LiblinearConfig(C, eps)
 end
 
 function predict(w::LibLinearWrapper, vec::SVEC)
-    v = Dict(get(w.map, k, rand(typemin(Int32):1)) => v for (k, v) in vec)
-    ypred = linear_predict(w.cls, sparse([v], w.cls.nr_feature))
+    D = Dict(get(w.map, k, 1) => v for (k, v) in vec)
+    ypred = linear_predict(w.cls, sparse([D], w.cls.nr_feature))
     ypred[1][1]
 end
