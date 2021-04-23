@@ -34,9 +34,9 @@ end
         S = Float64[]
         for (_traincorpus, _trainlabels, _testcorpus, _testlabels) in folds
             tc = MicroTC(config, _traincorpus, _trainlabels; verbose=true)
-            valX = vectorize_corpus(tc, _testcorpus)
-            ypred = predict.(tc, valX)
-            #ypred = predict_corpus(tc, _testcorpus)
+            #valX = vectorize_corpus(tc, _testcorpus)
+            #ypred = predict.(tc, valX)
+            ypred = predict_corpus(tc, _testcorpus)
             push!(S, recall_score(_testlabels.refs, ypred, weight=:macro))
         end
 
@@ -55,7 +55,13 @@ end
             qlist=[[4], [3], [5]],
             nlist=[[1], [1, 2], []],
             slist=[]
-        )
+        ),
+        # cls=KncConfigSpace(
+        #     centerselection=[TextCentroidSelection()],
+        #     kernel=[k_(AngleDistance()) for k_ in [DirectKernel]]
+        # )
+        #cls = KnnClassifierConfigSpace()
+        #cls=LiblinearConfigSpace()
     )
 
     best_list = search_models(space, error_function, 32;

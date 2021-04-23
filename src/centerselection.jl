@@ -2,21 +2,17 @@
 # License is Apache 2.0: https://www.apache.org/licenses/LICENSE-2.0.txt
 
 import KCenters: center
+export TextCentroidSelection
 
-function center(::CentroidSelection, lst::AbstractVector{DVEC{Ti,Tv}}) where {Ti,Tv<:Real}
-    u = zero(DVEC{Ti,Tv})
+struct TextCentroidSelection <: AbstractCenterSelection end
+StructTypes.StructType(::Type{<:TextCentroidSelection}) = StructTypes.Struct()
+
+function center(::TextCentroidSelection, lst::AbstractVector{<:DVEC})
+    u = zero(eltype(lst))
 
     for v in lst
         TextSearch.add!(u, v)
     end
     
     TextSearch.normalize!(u)
-end
-
-
-function center(sel::KnnCentroidSelection, lst::AbstractVector{DVEC{Ti,Tv}}) where {Ti,Tv<:Real}
-    c = center(sel.sel1, lst)
-    seq = ExhaustiveSearch(sel.dist, lst)
-    k = sel.k == 0 ? ceil(Int32, log2(length(lst))) : sel.k
-    center(sel.sel2, lst[[p.id for p in search(seq, c, k)]])
 end

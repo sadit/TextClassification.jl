@@ -32,11 +32,11 @@ Base.isequal(a::MicroTC_Config, b::MicroTC_Config) = repr(a) == repr(b)
 function MicroTC_ConfigSpace(;
         kernel=[k_(CosineDistance()) for k_ in [DirectKernel, ReluKernel]],
         centerselection=[
-            CentroidSelection(),
-            MedoidSelection(dist=CosineDistance()),
-            KnnCentroidSelection(sel1=CentroidSelection(), sel2=CentroidSelection(), dist=CosineDistance())
+            TextCentroidSelection(),
+            #MedoidSelection(dist=CosineDistance()),
+            #KnnCentroidSelection(sel1=CentroidSelection(), sel2=CentroidSelection(), dist=CosineDistance())
         ],
-        ncenters=[3, 7],
+        ncenters=[3, 7, 11],
         textmodel=[EntModelConfigSpace(), VectorModelConfigSpace()],
         cls=[
             KncConfigSpace(centerselection=centerselection, kernel=kernel),

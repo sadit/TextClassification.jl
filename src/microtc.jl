@@ -14,6 +14,7 @@ struct MicroTC{C_<:MicroTC_Config, CLS_<:Any, TextModel_<:TextModel}
     config::C_
     cls::CLS_
     textmodel::TextModel_
+    tok::Tokenizer
 end
 
 StructTypes.StructType(::Type{<:MicroTC}) = StructTypes.Struct()
@@ -22,6 +23,7 @@ function Base.show(io::IO, model::MicroTC)
     show(io, model.config)
     show(io, model.cls)
     show(io, model.textmodel)
+    show(io, model.tok)
     print(io, "}")
 end
 
@@ -30,7 +32,7 @@ Base.broadcastable(tc::MicroTC) = (tc,)
 
 """
     create(config, train_X, train_y) # config describes a text model
-    create(config, train_X, train_y, dim) # config describes a classifier
+    create(config, train_X, train_y, tok, dim) # config describes a classifier
 
 Creates a new object from a configuration and a train / test datasets.
 
@@ -69,8 +71,11 @@ function MicroTC(
         mask[end] = true
     end
 
-    @info "considering $(sum(mask)) of $(length(mask)) examples after vectorization"
-    MicroTC(config, textmodel, X, train_y[mask], tok=tok)
+    m = sum(mask)
+    if m != length(mask)
+        @info "WARNING considering $(m) of $(length(mask)) examples after vectorization using $(config)"
+    end
+    MicroTC(config, textmodel, X, train_y[mask], tok=Tokenizer(tok))  # tok is a copy with isconstruction=false
 end
 
 function MicroTC(
@@ -81,7 +86,7 @@ function MicroTC(
         tok=Tokenizer(config.textconfig, invmap=nothing),
         verbose=true) where {S<:SVEC}
     cls = create(config.cls, train_X, train_y, textmodel.m)
-    MicroTC(config, cls, textmodel)
+    MicroTC(config, cls, textmodel, tok)
 end
 
 """
@@ -99,7 +104,7 @@ function vectorize(
         tc::MicroTC,
         text;
         bow=BOW(),
-        tok=Tokenizer(tc.config.textconfig, invmap=nothing),
+        tok=tc.tok,
         normalize=true
     )::SVEC
     vectorize(tc.textmodel, compute_bow(tok, text, bow); normalize)
@@ -117,7 +122,7 @@ function vectorize_corpus(
         tc::MicroTC,
         corpus;
         bow=BOW(),
-        tok=Tokenizer(tc.config.textconfig, isconstruction=false, invmap=nothing),
+        tok=tok=tc.tok,
         normalize=true
     )
     V = Vector{SVEC}(undef, length(corpus))
@@ -141,7 +146,7 @@ predict(tc::MicroTC, vec::SVEC) = predict(tc.cls, vec)
 
 function predict_corpus(tc::MicroTC, corpus;
     bow=BOW(),
-    tok=Tokenizer(tc.config.textconfig, isconstruction=false, invmap=nothing),
+    tok=tc.tok,
     normalize=true)
     V = Vector{UInt32}(undef, length(corpus))
 
