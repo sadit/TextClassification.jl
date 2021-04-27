@@ -10,20 +10,22 @@ export filtered_power_set, predict, predict_corpus, vectorize, vectorize_corpus,
 import Base: hash, isequal
 using SparseArrays
 
-struct MicroTC{C_<:MicroTC_Config, CLS_<:Any, TextModel_<:TextModel}
+struct MicroTC{C_<:MicroTC_Config, CLS_<:Any, TextModel_<:TextModel, LabelType<:Any}
     config::C_
     cls::CLS_
     textmodel::TextModel_
     tok::Tokenizer
+    levels::Vector{LabelType}
 end
 
 StructTypes.StructType(::Type{<:MicroTC}) = StructTypes.Struct()
 function Base.show(io::IO, model::MicroTC) 
-    print(io, "{MicroTC ")
-    show(io, model.config)
-    show(io, model.cls)
-    show(io, model.textmodel)
-    show(io, model.tok)
+    print(io, "{MicroTC")
+    show(io, ' ', model.config)
+    show(io, ' ', model.cls)
+    show(io, ' ', model.textmodel)
+    show(io, ' ', model.tok)
+    show(io, ' ', model.levels)
     print(io, "}")
 end
 
@@ -86,7 +88,7 @@ function MicroTC(
         tok=Tokenizer(config.textconfig, invmap=nothing),
         verbose=true) where {S<:SVEC}
     cls = create(config.cls, train_X, train_y, textmodel.m)
-    MicroTC(config, cls, textmodel, tok)
+    MicroTC(config, cls, textmodel, tok, copy(levels(train_y)))
 end
 
 """
@@ -142,13 +144,13 @@ end
 Predicts the label of the given input
 """
 predict(tc::MicroTC, text) = predict(tc.cls, vectorize(tc, text))
-predict(tc::MicroTC, vec::SVEC) = predict(tc.cls, vec)
+predict(tc::MicroTC, vec::SVEC) = tc.levels[predict(tc.cls, vec)]
 
 function predict_corpus(tc::MicroTC, corpus;
     bow=BOW(),
     tok=tc.tok,
     normalize=true)
-    V = Vector{UInt32}(undef, length(corpus))
+    V = Vector{eltype(tc.levels)}(undef, length(corpus))
 
     for i in eachindex(corpus)
         empty!(bow)

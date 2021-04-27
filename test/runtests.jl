@@ -37,7 +37,7 @@ end
             #valX = vectorize_corpus(tc, _testcorpus)
             #ypred = predict.(tc, valX)
             ypred = predict_corpus(tc, _testcorpus)
-            push!(S, recall_score(_testlabels.refs, ypred, weight=:macro))
+            push!(S, recall_score(_testlabels, ypred, weight=:macro))
         end
 
         1.0 - mean(S)
@@ -75,12 +75,12 @@ end
     end
 
     cls = MicroTC(best_list[1][1], traincorpus, trainlabels)
-    sc = classification_scores(testlabels.refs, predict_corpus(cls, testcorpus))
+    sc = classification_scores(testlabels, predict_corpus(cls, testcorpus))
     @info "*** Performance on test: " sc
     @test sc.accuracy > 0.6
 
     cls_ = JSON3.read(JSON3.write(cls), typeof(cls))
-    sc = classification_scores(testlabels.refs, predict_corpus(cls, testcorpus))
+    sc = classification_scores(testlabels, predict_corpus(cls, testcorpus))
     @info "*** Performance on test: " sc
     @test sc.accuracy > 0.6
 
