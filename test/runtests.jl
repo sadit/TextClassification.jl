@@ -19,7 +19,7 @@ function folds_split(corpus, labels, folds=3)
 end
 
 @testset "microtc" begin
-    !isfile("emo50k.json.gz") && download("https://github.com/sadit/TextClassificationTutorial/raw/main/data/emo50k.json.gz", "emo50k.json.gz")
+    !isfile("emo50k.json.gz") && Downloads.download("https://github.com/sadit/TextClassificationTutorial/raw/main/data/emo50k.json.gz", "emo50k.json.gz")
     labels = []
     corpus = []
     targets = ("♡", "💔")
