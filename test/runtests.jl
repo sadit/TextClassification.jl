@@ -1,5 +1,5 @@
 using Test, StatsBase, SearchModels, KCenters, KNearestCenters, TextSearch, TextClassification, CategoricalArrays
-using CSV, Random, MLDataUtils, JSON3
+using Downloads, Random, MLDataUtils, JSON3, GZip
 
 Random.seed!(1)
 function train_test_split(corpus, labels, at=0.7)
@@ -19,14 +19,21 @@ function folds_split(corpus, labels, folds=3)
 end
 
 @testset "microtc" begin
-    !isfile("emotions.csv") && download("http://ingeotec.mx/~sadit/emotions.csv", "emotions.csv")
-    
-    X = CSV.read("emotions.csv", NamedTuple)
-    targets = ["♡", "💔"]
-    I = [(l in targets) for l in X.klass]
-    labels = categorical(X.klass[I])
-    corpus = X.text[I]
-
+    !isfile("emo50k.json.gz") && download("https://github.com/sadit/TextClassificationTutorial/raw/main/data/emo50k.json.gz", "emo50k.json.gz")
+    labels = []
+    corpus = []
+    targets = ("♡", "💔")
+    GZip.open("emo50k.json.gz") do f
+        for line in eachline(f)
+            tweet = JSON3.read(line)
+            label = tweet["klass"]
+            if label in targets
+                push!(labels, tweet["klass"])
+                push!(corpus, tweet["text"])
+            end
+        end
+    end
+    labels = categorical(labels)
     traincorpus, trainlabels, testcorpus, testlabels = train_test_split(corpus, labels, 0.7)
     folds = folds_split(traincorpus, trainlabels)
 
