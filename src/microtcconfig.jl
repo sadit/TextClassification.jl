@@ -19,6 +19,16 @@ function MicroTC_Config(;
     MicroTC_Config(textconfig, textmodel, cls)
 end
 
+function Base.show(io::IO, config::MicroTC_Config) 
+    print(io, "{MicroTC_Config ")
+    show(io, config.textconfig)
+    print(io, " ")
+    show(io, config.textmodel)
+    print(io, " ")
+    show(io, typeof(config.cls))
+    print(io, " }")
+end
+
 struct MicroTC_ConfigSpace <: AbstractSolutionSpace
     textconfig::TextConfigSpace
     textmodel
