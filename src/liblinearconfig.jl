@@ -15,10 +15,6 @@ struct LibLinearWrapper{LinearModel}
     cls::LinearModel
 end
 
-StructTypes.StructType(::Type{<:LIBLINEAR.LinearModel}) = StructTypes.Struct()
-StructTypes.StructType(::Type{<:LibLinearWrapper}) = StructTypes.Struct()
-StructTypes.StructType(::Type{LiblinearConfig}) = StructTypes.Struct()
-
 function create(config::LiblinearConfig, train_X, train_y, dim)
     map = Dict{UInt64,Int}()
     map[0] = 1 # the vectorization procedure use the zero id as an special symbol

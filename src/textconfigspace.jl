@@ -29,7 +29,6 @@ end
     slist_space = [Skipgram(2, 1), Skipgram(2, 2), Skipgram(3, 1), Skipgram(3, 2)]
 end
 
-StructTypes.StructType(::Type{TextConfigSpace}) = StructTypes.Struct()
 Base.eltype(::TextConfigSpace) = TextConfig
 
 function Base.rand(space::TextConfigSpace)

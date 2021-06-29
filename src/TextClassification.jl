@@ -4,7 +4,7 @@
 module TextClassification
 using SimilaritySearch, KCenters, KNearestCenters, TextSearch, SearchModels
 import SearchModels: combine, combine_select, mutate, config_type
-using StructTypes, Parameters, CategoricalArrays
+using Parameters, CategoricalArrays
 
 include("centerselection.jl")
 include("textconfigspace.jl")

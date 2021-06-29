@@ -11,8 +11,6 @@ import StatsBase: predict
     keeptop::Float32 = 1.0
 end
 
-StructTypes.StructType(::Type{<:KnnClassifierConfig}) = StructTypes.Struct()
-
 create(config::KnnClassifierConfig, train_X, train_y, dim) = KnnClassifier(config, train_X, train_y)
 
 @with_kw struct KnnClassifierConfigSpace <: AbstractSolutionSpace
@@ -51,16 +49,13 @@ function KnnClassifier(config::KnnClassifierConfig, X, y::CategoricalArray)
     KnnClassifier(config, invindex, y)
 end
 
-StructTypes.StructType(::Type{<:KnnClassifier}) = StructTypes.Struct()
-
-
 function predict(cls::KnnClassifier, vec::SVEC)
     res = search(cls.index, vec, cls.config.k)
     knn_most_frequent_label(cls, res)
 end
 
 function knn_most_frequent_label(knn::KnnClassifier, res::KnnResult)
-    c = counts([knn.labels.refs[p.id] for p in res], 1:length(levels(knn.labels)))
+    c = counts([knn.labels.refs[id] for (id, dist) in res], 1:length(levels(knn.labels)))
     findmax(c)[end]
 end
 

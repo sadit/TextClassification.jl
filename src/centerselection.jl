@@ -5,7 +5,6 @@ import KCenters: center
 export TextCentroidSelection
 
 struct TextCentroidSelection <: AbstractCenterSelection end
-StructTypes.StructType(::Type{<:TextCentroidSelection}) = StructTypes.Struct()
 
 function center(::TextCentroidSelection, lst::AbstractVector{<:DVEC})
     u = zero(eltype(lst))

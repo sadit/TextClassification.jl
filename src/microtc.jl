@@ -18,7 +18,6 @@ struct MicroTC{C_<:MicroTC_Config, CLS_<:Any, TextModel_<:TextModel, LabelType<:
     levels::Vector{LabelType}
 end
 
-StructTypes.StructType(::Type{<:MicroTC}) = StructTypes.Struct()
 function Base.show(io::IO, model::MicroTC) 
     print(io, "{MicroTC")
     show(io, model.config)

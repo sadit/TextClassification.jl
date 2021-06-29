@@ -12,8 +12,6 @@ export EntModelConfigSpace, VectorModelConfigSpace
     weights::Union{Symbol,Vector{Float64}} = :balance
 end
 
-StructTypes.StructType(::Type{<:EntModelConfig}) = StructTypes.Struct()
-
 function create(c::EntModelConfig, train_X::AbstractVector{BOW}, train_y::CategoricalArray)
     model = VectorModel(EntropyWeighting(), c.local_weighting, train_X, train_y, mindocs=c.mindocs, smooth=c.smooth, weights=c.weights)
     c.keeptop < 1.0 ? prune_select_top(model, c.keeptop) : model
@@ -73,8 +71,6 @@ end
     mindocs = 1
     keeptop::Float64 = 1.0
 end
-
-StructTypes.StructType(::Type{<:VectorModelConfig}) = StructTypes.Struct()
 
 function create(c::VectorModelConfig, train_X::AbstractVector{BOW}, train_y::CategoricalArray)
     model = VectorModel(c.global_weighting, c.local_weighting, train_X)

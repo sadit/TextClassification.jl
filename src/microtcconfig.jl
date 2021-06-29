@@ -8,8 +8,6 @@ struct MicroTC_Config{T_, C_}
     cls::C_
 end
 
-StructTypes.StructType(::Type{<:MicroTC_Config}) = StructTypes.Struct()
-
 function MicroTC_Config(;
         textconfig=TextConfig(),
         textmodel=EntModelConfig(),

@@ -85,12 +85,6 @@ end
     sc = classification_scores(testlabels, predict_corpus(cls, testcorpus))
     @info "*** Performance on test: " sc
     @test sc.accuracy > 0.6
-
-    cls_ = JSON3.read(JSON3.write(cls), typeof(cls))
-    sc = classification_scores(testlabels, predict_corpus(cls, testcorpus))
-    @info "*** Performance on test: " sc
-    @test sc.accuracy > 0.6
-
 end
 
 # flush(stdout); flush(stderr)
