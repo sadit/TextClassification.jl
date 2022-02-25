@@ -1,5 +1,5 @@
-using Test, StatsBase, SearchModels, KCenters, KNearestCenters, TextSearch, TextClassification, CategoricalArrays
-using Downloads, Random, MLDataUtils, JSON3, GZip
+using Test, StatsBase, SearchModels, TextClassification, CategoricalArrays
+using Downloads, Random, MLDataUtils, JSON, CodecZlib, KNearestCenters
 
 Random.seed!(1)
 function train_test_split(corpus, labels, at=0.7)
@@ -23,15 +23,17 @@ end
     labels = []
     corpus = []
     targets = ("♡", "💔")
-    GZip.open("emo50k.json.gz") do f
-        for line in eachline(f)
-            tweet = JSON3.read(line)
+    open("emo50k.json.gz") do f
+        gz = GzipDecompressorStream(f)
+        for line in eachline(gz)
+            tweet = JSON.parse(line)
             label = tweet["klass"]
             if label in targets
                 push!(labels, tweet["klass"])
                 push!(corpus, tweet["text"])
             end
         end
+        close(gz)
     end
     labels = categorical(labels)
     traincorpus, trainlabels, testcorpus, testlabels = train_test_split(corpus, labels, 0.7)
@@ -49,13 +51,7 @@ end
             qlist=[[4], [3], [5]],
             nlist=[[1], [1, 2], []],
             slist=[]
-        ),
-        # cls=KncConfigSpace(
-        #     centerselection=[TextCentroidSelection()],
-        #     kernel=[k_(AngleDistance()) for k_ in [DirectKernel]]
-        # )
-        #cls = KnnClassifierConfigSpace()
-        #cls=LiblinearConfigSpace()
+        )
     )
 
     params = SearchParams(maxpopulation=8, bsize=2, mutbsize=8, crossbsize=8, tol=0.0, maxiters=30, verbose=true)
@@ -63,7 +59,7 @@ end
             S = Float64[]
             for (_traincorpus, _trainlabels, _testcorpus, _testlabels) in folds
                 tc = MicroTC(config, _traincorpus, _trainlabels; verbose=true)
-                ypred = predict_corpus(tc, _testcorpus)
+                ypred = predict_corpus(tc, _testcorpus) |> categorical
                 push!(S, recall_score(_testlabels, ypred, weight=:macro))
             end
     
@@ -79,7 +75,3 @@ end
     @info "*** Performance on test: " sc
     @test sc.accuracy > 0.6
 end
-
-# flush(stdout); flush(stderr)
-# sort!(P, :score, rev=true)
-# plot(P.score, label="", xlabel="rank", ylabel="score", markershape=:auto, title="RS performance on validation set") |> display

@@ -1,7 +1,5 @@
-# This file is a part of TextClassification.jl
-# License is Apache 2.0: https://www.apache.org/licenses/LICENSE-2.0.txt
+# This file is part of TextClassification.jl
 
-using IterTools
 using Random
 
 function filtered_power_set(set, lowersize=0, uppersize=5)

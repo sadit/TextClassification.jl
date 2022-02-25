@@ -1,5 +1,4 @@
-# This file is a part of TextClassification.jl
-# License is Apache 2.0: https://www.apache.org/licenses/LICENSE-2.0.txt
+# This file is part of TextClassification.jl
 
 using MLDataUtils, LinearAlgebra
 import TextSearch: vectorize, vectorize_corpus, BOW
@@ -34,18 +33,6 @@ end
 
 Base.copy(c::MicroTC; config=c.config, cls=c.cls, textmodel=c.textmodel) = MicroTC(config, cls, textmodel)
 Base.broadcastable(tc::MicroTC) = (tc,)
-
-"""
-    create(config, train_X, train_y) # config describes a text model
-    create(config, train_X, train_y, tok, dim) # config describes a classifier
-
-Creates a new object from a configuration and a train / test datasets.
-
-- train_X is an array of BOW objects for text models
-- train_X is an array of SVEC objects for classifiers
-"""
-create(config::KncConfig, train_X, train_y, dim) = Knc(config, train_X, train_y)
-create(config::KncProtoConfig, train_X, train_y, dim) = KncProto(config, train_X, train_y)
 
 """
     MicroTC(
@@ -127,7 +114,7 @@ function vectorize_corpus(
         tc::MicroTC,
         corpus;
         bow=BOW(),
-        tok=tok=tc.tok,
+        tok=tc.tok,
         normalize=true
     )
     V = Vector{SVEC}(undef, length(corpus))

@@ -1,5 +1,4 @@
-# This file is a part of TextClassification.jl
-# License is Apache 2.0: https://www.apache.org/licenses/LICENSE-2.0.txt
+# This file is part of TextClassification.jl
 export MicroTC_Config, MicroTC_ConfigSpace, TextConfigSpace
 
 struct MicroTC_Config{T_, C_}
@@ -38,20 +37,8 @@ Base.hash(c::MicroTC_Config) = hash(repr(c))
 Base.isequal(a::MicroTC_Config, b::MicroTC_Config) = repr(a) == repr(b)
 
 function MicroTC_ConfigSpace(;
-        kernel=[k_(CosineDistance()) for k_ in [DirectKernel, ReluKernel]],
-        centerselection=[
-            TextCentroidSelection(),
-            #MedoidSelection(dist=CosineDistance()),
-            #KnnCentroidSelection(sel1=CentroidSelection(), sel2=CentroidSelection(), dist=CosineDistance())
-        ],
-        ncenters=[3, 7, 11],
         textmodel=[EntModelConfigSpace(), VectorModelConfigSpace()],
-        cls=[
-            #KncConfigSpace(centerselection=centerselection, kernel=kernel),
-            ### KncPerClassConfigSpace{0.3}(centerselection=centerselection, kernel=kernel, ncenters=ncenters),
-            LiblinearConfigSpace(),
-            #KnnClassifierConfigSpace(k=1:2:11, keeptop=[10, 30, 100, 300, 1000, 3000])
-        ],
+        cls=[LiblinearConfigSpace()],
         textconfig::TextConfigSpace = TextConfigSpace()
     )
 
