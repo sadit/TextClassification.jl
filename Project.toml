@@ -29,3 +29,20 @@ SimilaritySearch = "0.8"
 StatsBase = "0.32.0, 0.33"
 TextSearch = "0.10"
 julia = "1.6"
+
+
+[extras]
+CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
+CategoricalArrays = "324d7699-5711-5eae-9e2f-1d82baa6b597"
+CodecZlib = "944b1d66-785c-5afd-91f1-9de20f533193"
+Downloads = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
+JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
+KNearestCenters = "4dca28ae-43b8-11eb-1f5e-d55054101997"
+MLDataUtils = "cc2ba9b6-d476-5e6d-8eaf-a92d5412d41d"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+SearchModels = "0e966ebe-b704-4a65-8279-db954bfe5da0"
+StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+[targets]
+
+test = ["CSV", "CategoricalArrays", "CodecZlib", "Downloads", "JSON", "KNearestCenters", "MLDataUtils", "Random", "SearchModels", "StatsBase", "Test"]
