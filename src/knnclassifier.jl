@@ -7,17 +7,17 @@ using StatsBase: counts
 import StatsBase: predict
 
 @with_kw struct KnnClassifierConfig
-    k::Int32 = 1
-    keeptop::Float32 = 1.0
+    k::Int = 1
+    keeptop::Int = 1000
 end
 
 create(config::KnnClassifierConfig, train_X, train_y, dim) = KnnClassifier(config, train_X, train_y)
 
 @with_kw struct KnnClassifierConfigSpace <: AbstractSolutionSpace
     k=[1, 5]
-    keeptop=[1.0]
+    keeptop=[1000]
     scale_k = (lower=1, s=1.5, upper=100)
-    scale_keeptop = (lower=0.1, s=1.5, upper=1.0)
+    scale_keeptop = (lower=10, s=1.5, upper=100_000)
 end
 
 Base.eltype(::KnnClassifierConfigSpace) = KnnClassifierConfig
@@ -39,18 +39,24 @@ end
 
 struct KnnClassifier
     config::KnnClassifierConfig
-    index::InvIndex
+    index::InvertedFile
     labels::CategoricalArray
 end
 
 function KnnClassifier(config::KnnClassifierConfig, X, y::CategoricalArray)
-    invindex = InvIndex(X)
-    invindex = config.keeptop < typemax(Int) ? prune(invindex, config.keeptop) : invindex
+    invindex = append!(InvertedFile(), X)
+    for i in eachindex(invindex.lists)
+        plist = invindex.lists[i]
+        if length(plist) > config.keeptop
+            invindex.lists[i] = topk(plist, config.keeptop)
+        end
+    end
+
     KnnClassifier(config, invindex, y)
 end
 
 function predict(cls::KnnClassifier, vec::SVEC)
-    res = search(cls.index, vec, cls.config.k)
+    res, _ = usearch(cls.index, vec, SimilaritySearch.getknnresult(cls.config.k))
     knn_most_frequent_label(cls, res)
 end
 
@@ -58,4 +64,3 @@ function knn_most_frequent_label(knn::KnnClassifier, res::KnnResult)
     c = counts([knn.labels.refs[id] for (id, dist) in res], 1:length(levels(knn.labels)))
     findmax(c)[end]
 end
-

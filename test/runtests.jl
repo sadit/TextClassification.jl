@@ -37,19 +37,6 @@ end
     traincorpus, trainlabels, testcorpus, testlabels = train_test_split(corpus, labels, 0.7)
     folds = folds_split(traincorpus, trainlabels)
 
-    function error_function(config::MicroTC_Config)
-        S = Float64[]
-        for (_traincorpus, _trainlabels, _testcorpus, _testlabels) in folds
-            tc = MicroTC(config, _traincorpus, _trainlabels; verbose=true)
-            #valX = vectorize_corpus(tc, _testcorpus)
-            #ypred = predict.(tc, valX)
-            ypred = predict_corpus(tc, _testcorpus)
-            push!(S, recall_score(_testlabels, ypred, weight=:macro))
-        end
-
-        1.0 - mean(S)
-    end
-
     for t in traincorpus[1:10]
         @show t
     end
@@ -71,11 +58,17 @@ end
         #cls=LiblinearConfigSpace()
     )
 
-    best_list = search_models(space, error_function, 32;
-        maxpopulation=8,
-        # search hyper-parameters
-        bsize=2, mutbsize=8, crossbsize=8,
-        tol=0.0, maxiters=30, verbose=true)
+    params = SearchParams(maxpopulation=8, bsize=2, mutbsize=8, crossbsize=8, tol=0.0, maxiters=30, verbose=true)
+    best_list = search_models(space, 32, params) do config
+            S = Float64[]
+            for (_traincorpus, _trainlabels, _testcorpus, _testlabels) in folds
+                tc = MicroTC(config, _traincorpus, _trainlabels; verbose=true)
+                ypred = predict_corpus(tc, _testcorpus)
+                push!(S, recall_score(_testlabels, ypred, weight=:macro))
+            end
+    
+            1.0 - mean(S)
+    end
 
     for (i, b) in enumerate(best_list)
         @info "-- perf best_lists[$i]:", i, b[1], b[2]

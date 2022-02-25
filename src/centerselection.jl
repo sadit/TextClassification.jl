@@ -6,12 +6,12 @@ export TextCentroidSelection
 
 struct TextCentroidSelection <: AbstractCenterSelection end
 
-function center(::TextCentroidSelection, lst::AbstractVector{<:DVEC})
+function center(::TextCentroidSelection, lst::AbstractDatabase)
     u = zero(eltype(lst))
 
     for v in lst
-        TextSearch.add!(u, v)
+        InvertedFiles.add!(u, v)
     end
     
-    TextSearch.normalize!(u)
+    InvertedFiles.normalize!(u)
 end

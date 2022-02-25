@@ -2,7 +2,7 @@
 # License is Apache 2.0: https://www.apache.org/licenses/LICENSE-2.0.txt
 
 using MLDataUtils, LinearAlgebra
-import TextSearch: vectorize, vectorize_corpus
+import TextSearch: vectorize, vectorize_corpus, BOW
 import StatsBase: predict
 import Base: hash, isequal
 export filtered_power_set, predict, predict_corpus, vectorize, vectorize_corpus, 
