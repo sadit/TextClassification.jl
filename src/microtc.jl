@@ -46,17 +46,20 @@ Base.broadcastable(tc::MicroTC) = (tc,)
 Creates a MicroTC model on the given dataset and configuration
 """
 function MicroTC(
-        config::MicroTC_Config,
-        train_corpus::AbstractVector,
-        train_y::CategoricalArray;
-        tok=Tokenizer(config.textconfig, invmap=nothing),
-        verbose=true)
-    train_corpus_bow = compute_bow_corpus(tok, train_corpus)
-    textmodel = create(config.textmodel, train_corpus_bow, train_y)
+            config::MicroTC_Config,
+            train_corpus::AbstractVector,
+            train_y::CategoricalArray;
+            tok=Tokenizer(config.textconfig),
+            verbose=true
+        )
+    
+    textmodel = create(config.textmodel, tok, train_corpus, train_y)
     X = SVEC[]
     mask = Bool[]
-    for bow in train_corpus_bow
-        x = vectorize(textmodel, bow)
+    bow = BOW()
+    for doc in train_corpus
+        empty!(bow)
+        x = vectorize(textmodel, tok, doc; bow)
         push!(mask, false)
         length(x) == 1 && haskey(x, 0) && continue
         push!(X, x)
@@ -66,8 +69,10 @@ function MicroTC(
     m = sum(mask)
     if m != length(mask)
         @info "WARNING considering $(m) of $(length(mask)) examples after vectorization using $(config)"
+        MicroTC(config, textmodel, X, train_y[mask]; tok)
+    else
+        MicroTC(config, textmodel, X, train_y; tok)
     end
-    MicroTC(config, textmodel, X, train_y[mask], tok=Tokenizer(tok))  # tok is a copy with isconstruction=false
 end
 
 function MicroTC(
@@ -75,44 +80,29 @@ function MicroTC(
         textmodel::TextModel,
         train_X::AbstractVector{S},
         train_y::CategoricalArray;
-        tok=Tokenizer(config.textconfig, invmap=nothing),
+        tok=Tokenizer(config.textconfig),
         verbose=true) where {S<:SVEC}
-    cls = create(config.cls, train_X, train_y, textmodel.m)
+    cls = create(config.cls, train_X, train_y, vocsize(textmodel))
     MicroTC(config, cls, textmodel, tok, copy(levels(train_y)))
 end
 
 """
-    vectorize(tc::MicroTC, text;
-        bow=BOW(),
-        tok=Tokenizer(tc.config.textconfig, invmap=nothing),
-        normalize=true)
-    vectorize(tc::MicroTC, bow::BOW)
+    vectorize(tc::MicroTC, text; bow=BOW(), tok=tc.tok, normalize=true)
+    vectorize(tc::MicroTC, bow::BOW; normalize=true)
 
 Creates a weighted vector using the model. The input `text` can be a string or an array of strings;
 it also can be an already computed bag of words.
 
 """
-function vectorize(
-        tc::MicroTC,
-        text;
-        bow=BOW(),
-        tok=tc.tok,
-        normalize=true
-    )::SVEC
-    vectorize(tc.textmodel, compute_bow(tok, text, bow); normalize)
+function vectorize(tc::MicroTC, text; tok=tc.tok, bow=BOW(), normalize=true)::SVEC
+    vectorize(tc.textmodel, tok, text; bow, normalize)
 end
 
-function vectorize(
-        tc::MicroTC,
-        bow::BOW;
-        normalize=true
-    )::SVEC
+function vectorize(tc::MicroTC, bow::BOW; normalize=true)::SVEC
     vectorize(tc.textmodel, bow; normalize=normalize)
 end
 
-function vectorize_corpus(
-        tc::MicroTC,
-        corpus;
+function vectorize_corpus(tc::MicroTC, corpus;
         bow=BOW(),
         tok=tc.tok,
         normalize=true

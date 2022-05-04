@@ -37,7 +37,7 @@ Base.hash(c::MicroTC_Config) = hash(repr(c))
 Base.isequal(a::MicroTC_Config, b::MicroTC_Config) = repr(a) == repr(b)
 
 function MicroTC_ConfigSpace(;
-        textmodel=[EntModelConfigSpace(), VectorModelConfigSpace()],
+        textmodel=[VectorModelConfigSpace(), EntModelConfigSpace()],
         cls=[LiblinearConfigSpace()],
         textconfig::TextConfigSpace = TextConfigSpace()
     )

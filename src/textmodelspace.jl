@@ -11,12 +11,13 @@ export EntModelConfigSpace, VectorModelConfigSpace
     weights::Union{Symbol,Vector{Float64}} = :balance
 end
 
-function create(c::EntModelConfig, train_X::AbstractVector{<:DVEC}, train_y::CategoricalArray)
-    model = VectorModel(EntropyWeighting(), c.local_weighting, train_X, train_y, mindocs=c.mindocs, smooth=c.smooth, weights=c.weights)
+function create(c::EntModelConfig, tok::Tokenizer, corpus, train_y::CategoricalArray)
+    model = VectorModel(EntropyWeighting(), c.local_weighting, tok, corpus, train_y; mindocs=c.mindocs, smooth=c.smooth, weights=c.weights)
     c.keeptop < 1.0 ? prune_select_top(model, c.keeptop) : model
 end
 
 @with_kw struct EntModelConfigSpace <: AbstractSolutionSpace
+    #local_weighting = [TfWeighting(), TpWeighting(), FreqWeighting(), BinaryLocalWeighting()]
     local_weighting = [TfWeighting(), TpWeighting(), FreqWeighting(), BinaryLocalWeighting()]
     mindocs = 1:5
     smooth = 0:3 # by default=1 in favor of mindocs
@@ -71,8 +72,9 @@ end
     keeptop::Float64 = 1.0
 end
 
-function create(c::VectorModelConfig, train_X::AbstractVector{<:DVEC}, train_y::CategoricalArray)
-    model = VectorModel(c.global_weighting, c.local_weighting, train_X)
+function create(c::VectorModelConfig, tok::Tokenizer, train_corpus::AbstractVector, train_y::CategoricalArray)
+    model = VectorModel(c.global_weighting, c.local_weighting, tok, train_corpus)
+
     c.keeptop < 1.0 ? prune_select_top(model, c.keeptop) : model
 end
 
