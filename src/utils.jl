@@ -19,12 +19,13 @@ function microtc_kfolds(
         initialpopulation = 32,
         k = 3,
         score = (gold, pred) -> recall_score(gold, pred, weight=:macro),
-        params = SearchParams(maxpopulation=8, bsize=2, mutbsize=8, crossbsize=8, tol=0.0, maxiters=16, verbose=true)
+        params = SearchParams(maxpopulation=8, bsize=2, mutbsize=8, crossbsize=8, tol=0.0, maxiters=16, verbose=true),
+        parallel = :threads
     )
 
     Folds = kfolds(shuffleobs((corpus, labels)), k)
 
-    best_list = search_models(space, initialpopulation, params) do config
+    best_list = search_models(space, initialpopulation, params; parallel) do config
         S = Float64[]
         for ((traincorpus, trainlabels), (testcorpus, testlabels)) in Folds
             tc = MicroTC(config, traincorpus, trainlabels; verbose=true)
@@ -55,12 +56,13 @@ function microtc(
         initialpopulation = 32,
         score = (gold, pred) -> recall_score(gold, pred, weight=:macro),
         at = 0.7,
-        params = SearchParams(maxpopulation=8, bsize=2, mutbsize=8, crossbsize=8, tol=0.0, maxiters=16, verbose=true)
+        params = SearchParams(maxpopulation=8, bsize=2, mutbsize=8, crossbsize=8, tol=0.0, maxiters=16, verbose=true),
+        parallel = :threads
     )
 
     (traincorpus, trainlabels), (testcorpus, testlabels) = stratifiedobs(shuffleobs((corpus, labels)), at)
 
-    best_list = search_models(space, initialpopulation, params) do config
+    best_list = search_models(space, initialpopulation, params; parallel) do config
         tc = MicroTC(config, traincorpus, trainlabels; verbose=true)
         ypred = predict_corpus(tc, testcorpus) |> categorical
         1.0 - score(testlabels, ypred)
