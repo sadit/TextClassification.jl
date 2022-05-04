@@ -11,7 +11,7 @@ export EntModelConfigSpace, VectorModelConfigSpace
     weights::Union{Symbol,Vector{Float64}} = :balance
 end
 
-function create(c::EntModelConfig, tok::Tokenizer, corpus, train_y::CategoricalArray)
+function create(c::EntModelConfig, tok::Tokenizer, corpus, train_y)
     model = VectorModel(EntropyWeighting(), c.local_weighting, tok, corpus, train_y; mindocs=c.mindocs, smooth=c.smooth, weights=c.weights)
     c.keeptop < 1.0 ? prune_select_top(model, c.keeptop) : model
 end
@@ -72,9 +72,8 @@ end
     keeptop::Float64 = 1.0
 end
 
-function create(c::VectorModelConfig, tok::Tokenizer, train_corpus::AbstractVector, train_y::CategoricalArray)
+function create(c::VectorModelConfig, tok::Tokenizer, train_corpus::AbstractVector, train_y)
     model = VectorModel(c.global_weighting, c.local_weighting, tok, train_corpus)
-
     c.keeptop < 1.0 ? prune_select_top(model, c.keeptop) : model
 end
 

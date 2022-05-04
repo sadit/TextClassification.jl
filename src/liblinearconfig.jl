@@ -19,7 +19,7 @@ function create(config::LiblinearConfig, train_X, train_y, dim)
     map[0] = 1 # the vectorization procedure use the zero id as an special symbol
     train_X_ = [Dict(get!(map, k, length(map)+1) => v for (k, v) in x) for x in train_X]
     # dim + 1 for out-of-vocabulary tokens
-    cls = linear_train(train_y.refs, sparse(train_X_, dim + 1); C=config.C, eps=config.eps, bias=1.0)
+    cls = linear_train(levelcode.(train_y), sparse(train_X_, dim + 1); C=config.C, eps=config.eps, bias=1.0)
     LibLinearWrapper(map, cls)
 end
 

@@ -10,4 +10,5 @@ include("textmodelspace.jl")
 include("liblinearconfig.jl")
 include("microtcconfig.jl")
 include("microtc.jl")
+include("utils.jl")
 end # module

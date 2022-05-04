@@ -48,7 +48,7 @@ Creates a MicroTC model on the given dataset and configuration
 function MicroTC(
             config::MicroTC_Config,
             train_corpus::AbstractVector,
-            train_y::CategoricalArray;
+            train_y;
             tok=Tokenizer(config.textconfig),
             verbose=true
         )
@@ -79,7 +79,7 @@ function MicroTC(
         config::MicroTC_Config,
         textmodel::TextModel,
         train_X::AbstractVector{S},
-        train_y::CategoricalArray;
+        train_y;
         tok=Tokenizer(config.textconfig),
         verbose=true) where {S<:SVEC}
     cls = create(config.cls, train_X, train_y, vocsize(textmodel))
