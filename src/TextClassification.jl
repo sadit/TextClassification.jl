@@ -1,6 +1,7 @@
 # This file is part of TextClassification.jl
 
 module TextClassification
+import StatsAPI: predict, fit
 using SimilaritySearch, TextSearch, SearchModels
 import SearchModels: combine, combine_select, mutate, config_type
 using Parameters, CategoricalArrays, InvertedFiles

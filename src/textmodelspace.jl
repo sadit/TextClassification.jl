@@ -107,8 +107,8 @@ function combine(a::VectorModelConfig, b::VectorModelConfig)
 end
 
 function mutate(space::VectorModelConfigSpace, c::VectorModelConfig, iter)
-    mindocs = SearchModels.scale(c.mindocs; space.scale_mindocs...)
-    keeptop = SearchModels.scale(c.keeptop; space.scale_keeptop...)
+    mindocs = space.scale_mindocs === nothing ? c.mindocs : SearchModels.scale(c.mindocs; space.scale_mindocs...)
+    keeptop = space.scale_keeptop === nothing ? c.keeptop : SearchModels.scale(c.keeptop; space.scale_keeptop...)
     lw = SearchModels.change(c.local_weighting, space.local_weighting, p1=0.3)
     gw = SearchModels.change(c.global_weighting, space.global_weighting, p1=0.3)
 
