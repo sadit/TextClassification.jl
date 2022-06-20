@@ -3,7 +3,7 @@ using KNearestCenters, StatsBase
 export microtc, microtc_kfolds
 
 function microtc_kfolds(
-        corpus,    
+        corpus,
         labels;
         slist = [],
         nlist = [[1], [1, 2], []],
@@ -57,7 +57,7 @@ function microtc(
         score = (gold, pred) -> recall_score(gold, pred, weight=:macro),
         at = 0.7,
         params = SearchParams(maxpopulation=8, bsize=2, mutbsize=8, crossbsize=8, tol=0.0, maxiters=16, verbose=true),
-        parallel = :threads
+        parallel = :none #:threads
     )
 
     (traincorpus, trainlabels), (testcorpus, testlabels) = stratifiedobs(shuffleobs((corpus, labels)), at)
