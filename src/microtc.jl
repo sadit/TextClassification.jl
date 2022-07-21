@@ -1,6 +1,6 @@
 # This file is part of TextClassification.jl
 
-using MLDataUtils, LinearAlgebra
+using MLUtils, LinearAlgebra
 import TextSearch: vectorize, vectorize_corpus, BOW
 import StatsBase: predict
 import Base: hash, isequal

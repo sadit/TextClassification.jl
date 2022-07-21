@@ -19,7 +19,8 @@ function microtc_kfolds(
         initialpopulation = 32,
         k = 3,
         score = (gold, pred) -> recall_score(gold, pred, weight=:macro),
-        params = SearchParams(maxpopulation=8, bsize=2, mutbsize=8, crossbsize=8, tol=0.0, maxiters=16, verbose=true),
+        maxpopulation=8, bsize=2, mutbsize=8, crossbsize=8, tol=0.0, maxiters=16, verbose=true,
+        params = SearchParams(; maxpopulation, bsize, mutbsize, crossbsize, tol, maxiters, verbose),
         parallel = :threads
     )
 
@@ -56,11 +57,19 @@ function microtc(
         initialpopulation = 32,
         score = (gold, pred) -> recall_score(gold, pred, weight=:macro),
         at = 0.7,
-        params = SearchParams(maxpopulation=8, bsize=2, mutbsize=8, crossbsize=8, tol=0.0, maxiters=16, verbose=true),
+        maxpopulation=8, bsize=2, mutbsize=8, crossbsize=8, tol=0.0, maxiters=16, verbose=true,
+        params = SearchParams(; maxpopulation, bsize, mutbsize, crossbsize, tol, maxiters, verbose),
+        sample = 1.0,
         parallel = :none #:threads
     )
 
-    (traincorpus, trainlabels), (testcorpus, testlabels) = stratifiedobs(shuffleobs((corpus, labels)), at)
+    obs = if sample < 1.0
+        randobs((corpus, labels), ceil(Int, length(labels) * sample))
+    else
+        shuffleobs((corpus, labels))
+    end
+
+    (traincorpus, trainlabels), (testcorpus, testlabels) = splitobs(obs; at)
 
     best_list = search_models(space, initialpopulation, params; parallel) do config
         tc = MicroTC(config, traincorpus, trainlabels; verbose=true)
