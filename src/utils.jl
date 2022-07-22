@@ -1,6 +1,6 @@
 # This file is part of TextClassification.jl
 using KNearestCenters, StatsBase
-export microtc, microtc_kfolds
+export microtc, microtc_kfolds, scores, recall_score, accuracy_score, f1_score, SearchParams
 
 function microtc_kfolds(
         corpus,
@@ -63,13 +63,12 @@ function microtc(
         parallel = :none #:threads
     )
 
-    obs = if sample < 1.0
-        randobs((corpus, labels), ceil(Int, length(labels) * sample))
+    (traincorpus, trainlabels), (testcorpus, testlabels) = if sample < 1.0
+        obs = randobs((corpus, labels), ceil(Int, length(labels) * sample))
+        splitobs(obs; at)
     else
-        shuffleobs((corpus, labels))
+        splitobs((corpus, labels); at, shuffle=true)
     end
-
-    (traincorpus, trainlabels), (testcorpus, testlabels) = splitobs(obs; at)
 
     best_list = search_models(space, initialpopulation, params; parallel) do config
         tc = MicroTC(config, traincorpus, trainlabels; verbose=true)
