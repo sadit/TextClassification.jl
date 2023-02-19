@@ -38,17 +38,17 @@ function Base.rand(space::TextConfigSpace)
         nlist = [1]
     end
 
-    TextConfig(
-        rand(space.del_diac),
-        rand(space.del_dup),
-        rand(space.del_punc),
+    TextConfig(;
+        del_diac = rand(space.del_diac),
+        del_dup = rand(space.del_dup),
+        del_punc = rand(space.del_punc),
 
-        rand(space.group_num),
-        rand(space.group_url),
-        rand(space.group_usr),
-        rand(space.group_emo),
+        group_num = rand(space.group_num),
+        group_url = rand(space.group_url),
+        group_usr = rand(space.group_usr),
+        group_emo = rand(space.group_emo),
         
-        rand(space.lc),
+        lc = rand(space.lc),
         qlist,
         nlist,
         slist
@@ -66,7 +66,7 @@ function combine(a::TextConfig, b::TextConfig)
         nlist = [1]
     end
     
-    TextConfig(
+    TextConfig(;
         rand(L).del_diac,
         rand(L).del_dup,
         rand(L).del_punc,
@@ -75,9 +75,9 @@ function combine(a::TextConfig, b::TextConfig)
         rand(L).group_usr,
         rand(L).group_emo,
         rand(L).lc,
-        sort!(qlist), 
-        sort!(nlist),
-        sort!(slist)
+        qlist=sort!(qlist), 
+        nlist=sort!(nlist),
+        slist=sort!(slist)
     )
 end
 
@@ -108,15 +108,15 @@ function mutate(space::TextConfigSpace, c::TextConfig, iter)
         nlist = [1]
     end
     
-    TextConfig(
-        SearchModels.change(c.del_diac, space.del_diac),
-        SearchModels.change(c.del_dup, space.del_dup),
-        SearchModels.change(c.del_punc, space.del_punc),
-        SearchModels.change(c.group_num, space.group_num),
-        SearchModels.change(c.group_url, space.group_url),
-        SearchModels.change(c.group_usr, space.group_usr),
-        SearchModels.change(c.group_emo, space.group_emo),
-        SearchModels.change(c.lc, space.lc),
+    TextConfig(;
+        del_diac = SearchModels.change(c.del_diac, space.del_diac),
+        del_dup = SearchModels.change(c.del_dup, space.del_dup),
+        del_punc = SearchModels.change(c.del_punc, space.del_punc),
+        group_num = SearchModels.change(c.group_num, space.group_num),
+        group_url = SearchModels.change(c.group_url, space.group_url),
+        group_usr = SearchModels.change(c.group_usr, space.group_usr),
+        group_emo = SearchModels.change(c.group_emo, space.group_emo),
+        lc = SearchModels.change(c.lc, space.lc),
         qlist,
         nlist,
         slist
