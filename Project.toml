@@ -1,7 +1,7 @@
 name = "TextClassification"
 uuid = "8e067cb0-742a-4f90-93f9-f1fa01b385ec"
 authors = ["Eric S. Tellez <donsadit@gmail.com>"]
-version = "0.6.2"
+version = "0.5.3"
 
 [deps]
 CategoricalArrays = "324d7699-5711-5eae-9e2f-1d82baa6b597"
