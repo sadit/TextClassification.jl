@@ -23,6 +23,7 @@ function microtc_kfolds(
         params = SearchParams(; maxpopulation, bsize, mutbsize, crossbsize, maxiters, verbose),
         parallel = :threads
     )
+    labels = categorical(labels)
 
     Folds = kfolds(shuffleobs((corpus, labels)), k)
 
@@ -69,6 +70,7 @@ function microtc(
     else
         splitobs((corpus, labels); at, shuffle=true)
     end
+
 
     best_list = search_models(space, initialpopulation, params; parallel) do config
         tc = MicroTC(config, traincorpus, trainlabels; verbose=true)
