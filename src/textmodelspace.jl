@@ -12,7 +12,8 @@ export EntModelConfigSpace, VectorModelConfigSpace
 end
 
 function create(c::EntModelConfig, textconfig::TextConfig, corpus, train_y; minbatch=0)
-    model = VectorModel(EntropyWeighting(), c.local_weighting, textconfig, corpus, train_y; mindocs=c.min_token_ndocs, smooth=c.smooth, weights=c.weights, minbatch)
+    voc = Vocabulary(textconfig, corpus)
+    model = VectorModel(EntropyWeighting(), c.local_weighting, voc, corpus, train_y; mindocs=c.min_token_ndocs, smooth=c.smooth, weights=c.weights)
     maxf = ceil(Int, c.max_token_pdocs * length(corpus))
     model = filter_tokens(model) do t
         c.min_token_ndocs <= t.ndocs <= maxf
@@ -77,11 +78,12 @@ end
 end
 
 function create(c::VectorModelConfig, textconfig::TextConfig, corpus::AbstractVector, train_y; minbatch=0)
-    model = VectorModel(c.global_weighting, c.local_weighting, textconfig, corpus; minbatch)
+    voc = Vocabulary(textconfig, corpus)
     maxf = ceil(Int, c.max_token_pdocs * length(corpus))
-    filter_tokens(model) do t
+    voc = filter_tokens(voc) do t
         c.min_token_ndocs <= t.ndocs <= maxf
     end
+    VectorModel(c.global_weighting, c.local_weighting, voc)
 end
 
 @with_kw struct VectorModelConfigSpace <: AbstractSolutionSpace

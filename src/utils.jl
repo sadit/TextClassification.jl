@@ -19,8 +19,8 @@ function microtc_kfolds(
         initialpopulation = 32,
         k = 3,
         score = (gold, pred) -> recall_score(gold, pred, weight=:macro),
-        maxpopulation=8, bsize=2, mutbsize=8, crossbsize=8, tol=0.0, maxiters=16, verbose=true,
-        params = SearchParams(; maxpopulation, bsize, mutbsize, crossbsize, tol, maxiters, verbose),
+        maxpopulation=8, bsize=2, mutbsize=8, crossbsize=8, maxiters=16, verbose=true,
+        params = SearchParams(; maxpopulation, bsize, mutbsize, crossbsize, maxiters, verbose),
         parallel = :threads
     )
 
@@ -57,8 +57,8 @@ function microtc(
         initialpopulation = 32,
         score = (gold, pred) -> recall_score(gold, pred, weight=:macro),
         at = 0.7,
-        maxpopulation=8, bsize=2, mutbsize=8, crossbsize=8, tol=0.0, maxiters=16, verbose=true,
-        params = SearchParams(; maxpopulation, bsize, mutbsize, crossbsize, tol, maxiters, verbose),
+        maxpopulation=8, bsize=2, mutbsize=8, crossbsize=8, maxiters=16, verbose=true,
+        params = SearchParams(; maxpopulation, bsize, mutbsize, crossbsize, maxiters, verbose),
         sample = 1.0,
         parallel = :none #:threads
     )

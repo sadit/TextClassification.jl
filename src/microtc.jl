@@ -56,7 +56,7 @@ function MicroTC(
     
     ## vectorization and tokenization make heavy use of multithreading, we lock other threads here to allow the running thread can take others inside the block without resource competition
     textmodel = create(config.textmodel, textconfig, train_corpus, train_y; minbatch)    
-    X = vectorize_corpus(textmodel, textconfig, train_corpus; minbatch)
+    X = vectorize_corpus(textmodel, train_corpus; minbatch)
     mask = BitVector(undef, length(train_corpus))
     for (i, x) in enumerate(X)
         mask[i] = !(length(x) == 1 && haskey(x, 0))
@@ -120,7 +120,7 @@ function predict_corpus(tc::MicroTC, corpus;
     minbatch=0,
     normalize=true)
 
-    V = vectorize_corpus(tc.textmodel, textconfig, corpus; normalize, minbatch)
+    V = vectorize_corpus(tc.textmodel, corpus; normalize, minbatch)
     #don't know if liblinear prediction is multithreading
     n = length(V)
     # minbatch = getminbatch(minbatch, n)
