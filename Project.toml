@@ -6,7 +6,6 @@ version = "0.6.0"
 [deps]
 Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 InvertedFiles = "b20bd276-2c70-11ec-161a-3d1e1109a1c3"
-KCenters = "5d8de97f-65f8-4dd6-a15b-0f89c36a43ce"
 LIBLINEAR = "2d691ee1-e668-5016-a719-b2531b85e0f5"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 MLUtils = "f1d291b0-491e-4a28-83b9-f70985020b54"
