@@ -118,6 +118,12 @@ function predict_corpus(tc::MicroTC, corpus;
     normalize=true)
 
     V = vectorize_corpus(tc.textmodel, corpus; normalize, minbatch)
+
+    for v in V
+        if length(v) == 0 # empty vector
+            v[rand(1:vocsize(tc.textmodel))] = 1f0
+        end
+    end
     #don't know if liblinear prediction is multithreading
     n = length(V)
     # minbatch = getminbatch(minbatch, n)
