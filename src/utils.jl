@@ -1,5 +1,5 @@
 # This file is part of TextClassification.jl
-using KNearestCenters, StatsBase
+using StatsBase
 export microtc, microtc_kfolds, scores, recall_score, accuracy_score, f1_score, SearchParams
 
 function microtc_kfolds(

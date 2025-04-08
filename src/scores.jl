@@ -1,4 +1,4 @@
-# This file is a part of KNearestCenters.jl
+# This file is original from KNearestCenters.jl
 
 using StatsBase
 export accuracy_score, precision_recall, precision_score, recall_score, f1_score, classification_scores
