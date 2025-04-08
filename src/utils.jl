@@ -23,7 +23,6 @@ function microtc_kfolds(
         params = SearchParams(; maxpopulation, bsize, mutbsize, crossbsize, maxiters, verbose),
         parallel = :threads
     )
-    labels = categorical(labels)
 
     Folds = kfolds(shuffleobs((corpus, labels)), k)
 
@@ -31,7 +30,7 @@ function microtc_kfolds(
         S = Float64[]
         for ((traincorpus, trainlabels), (testcorpus, testlabels)) in Folds
             tc = MicroTC(config, traincorpus, trainlabels; verbose=true)
-            ypred = predict_corpus(tc, testcorpus) |> categorical
+            ypred = predict_corpus(tc, testcorpus)
             push!(S, score(testlabels, ypred))
         end
    
@@ -74,7 +73,7 @@ function microtc(
 
     best_list = search_models(space, initialpopulation, params; parallel) do config
         tc = MicroTC(config, traincorpus, trainlabels; verbose=true)
-        ypred = predict_corpus(tc, testcorpus) |> categorical
+        ypred = predict_corpus(tc, testcorpus)
         1.0 - score(testlabels, ypred)
     end
    

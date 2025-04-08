@@ -1,5 +1,5 @@
-using Test, StatsBase, SearchModels, TextClassification, CategoricalArrays
-using Downloads, Random, MLUtils, JSON, CodecZlib, KNearestCenters
+using Test, StatsBase, SearchModels, TextClassification
+using Downloads, Random, MLUtils, JSON, CodecZlib
 
 Random.seed!(1)
 
@@ -21,7 +21,7 @@ Random.seed!(1)
         close(gz)
     end
 
-    (traincorpus, trainlabels), (testcorpus, testlabels) = splitobs(shuffleobs((corpus, categorical(labels))); at=0.7)
+    (traincorpus, trainlabels), (testcorpus, testlabels) = splitobs(shuffleobs((corpus, labels)); at=0.7)
     for t in traincorpus[1:10]
         @show t
     end

@@ -3,9 +3,10 @@
 module TextClassification
 import StatsAPI: predict, fit
 using SimilaritySearch, TextSearch, SearchModels
-import SearchModels: combine, combine_select, mutate, config_type
-using Parameters, CategoricalArrays, InvertedFiles
+import SearchModels: combine, combine_select, mutate, config_type, InvalidSetupError
+using Parameters, InvertedFiles
 
+include("scores.jl")
 include("textconfigspace.jl")
 include("textmodelspace.jl")
 include("liblinearconfig.jl")

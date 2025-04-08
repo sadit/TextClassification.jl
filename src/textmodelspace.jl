@@ -83,6 +83,8 @@ function create(c::VectorModelConfig, textconfig::TextConfig, corpus::AbstractVe
     voc = filter_tokens(voc) do t
         c.min_token_ndocs <= t.ndocs <= maxf
     end
+
+    vocsize(voc) == 0 && throw(InvalidSetupError((; VectorModelConfig=c, TextConfig=textconfig), "empty vocabulary"))
     VectorModel(c.global_weighting, c.local_weighting, voc)
 end
 

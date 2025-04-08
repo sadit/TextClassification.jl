@@ -9,12 +9,11 @@ export filtered_power_set, predict, predict_corpus, vectorize, vectorize_corpus,
 import Base: hash, isequal
 using SparseArrays
 
-struct MicroTC{C_<:MicroTC_Config, CLS_<:Any, TextModel_<:TextModel, LabelType<:Any}
+struct MicroTC{C_<:MicroTC_Config, CLS_<:Any, TextModel_<:TextModel}
     config::C_
     cls::CLS_
     textmodel::TextModel_
     textconfig::TextConfig
-    levels::Vector{LabelType}
 end
 
 function Base.show(io::IO, model::MicroTC) 
@@ -26,8 +25,6 @@ function Base.show(io::IO, model::MicroTC)
     show(io, model.textmodel)
     print(io, " ")
     show(io, model.textconfig)
-    print(io, " ")
-    show(io, model.levels)
     print(io, "}")
 end
 
@@ -38,10 +35,10 @@ Base.broadcastable(tc::MicroTC) = (tc,)
     MicroTC(
         config::MicroTC_Config,
         train_corpus::AbstractVector,
-        train_y::CategoricalArray;
+        train_y;
         textconfig=config.textconfig,
         verbose=true)
-    MicroTC(config::MicroTC_Config, textmodel::TextModel, train_X::AbstractVector{S}, train_y::CategoricalArray; verbose=true) where {S<:SVEC}
+    MicroTC(config::MicroTC_Config, textmodel::TextModel, train_X::AbstractVector{S}, train_y; verbose=true) where {S<:SVEC}
 
 Creates a MicroTC model on the given dataset and configuration
 """
@@ -64,7 +61,7 @@ function MicroTC(
 
     m = sum(mask)
     if m != length(mask)
-        @info "WARNING using $(m) of $(length(mask)) examples after vectorization using $(config)"
+        @warn "using $(m) of $(length(mask)) examples after vectorization using $(config)"
         MicroTC(config, textmodel, X[mask], train_y[mask]; textconfig)
     else
         MicroTC(config, textmodel, X, train_y; textconfig)
@@ -79,7 +76,7 @@ function MicroTC(
         textconfig=config.textconfig,
         verbose=true) where {S<:SVEC}
     cls = create(config.cls, train_X, train_y, vocsize(textmodel))
-    MicroTC(config, cls, textmodel, textconfig, copy(levels(train_y)))
+    MicroTC(config, cls, textmodel, textconfig)
 end
 
 """
@@ -113,7 +110,7 @@ end
 Predicts the label of the given input
 """
 predict(tc::MicroTC, text) = predict(tc.cls, vectorize(tc, text))
-predict(tc::MicroTC, vec::SVEC) = tc.levels[predict(tc.cls, vec)]
+predict(tc::MicroTC, vec::SVEC) = predict(tc.cls, vec)
 
 function predict_corpus(tc::MicroTC, corpus;
     textconfig=tc.textconfig,
@@ -124,11 +121,5 @@ function predict_corpus(tc::MicroTC, corpus;
     #don't know if liblinear prediction is multithreading
     n = length(V)
     # minbatch = getminbatch(minbatch, n)
-    P = Vector{eltype(tc.levels)}(undef, n)
-    #Threads.@threads
-    for i in 1:n
-        P[i] = predict(tc, V[i])
-    end
-    #[predict(tc, v) for v in V]
-    P
+    [predict(tc, V[i]) for i in 1:n]
 end
