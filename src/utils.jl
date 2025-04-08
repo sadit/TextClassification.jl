@@ -64,8 +64,7 @@ function microtc(
     )
 
     (traincorpus, trainlabels), (testcorpus, testlabels) = if sample < 1.0
-        obs = randobs((corpus, labels), ceil(Int, length(labels) * sample))
-        splitobs(obs; at)
+        splitobs(obs; at, shuffle=true, stratified=labels)
     else
         splitobs((corpus, labels); at, shuffle=true)
     end
