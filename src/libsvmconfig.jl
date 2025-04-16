@@ -2,7 +2,7 @@
 
 export LIBSVMConfig, LIBSVMConfigSpace
 
-using LIBSVM
+using LIBSVM: svmpredict, svmtrain, Kernel
 
 @with_kw struct LIBSVMConfig
     C::Float64 = 1.0
