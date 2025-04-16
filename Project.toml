@@ -6,7 +6,7 @@ version = "0.6.0"
 [deps]
 Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 InvertedFiles = "b20bd276-2c70-11ec-161a-3d1e1109a1c3"
-LIBLINEAR = "2d691ee1-e668-5016-a719-b2531b85e0f5"
+LIBSVM = "b1bec4e5-fd48-53fe-b0cb-9723c09d164b"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 MLUtils = "f1d291b0-491e-4a28-83b9-f70985020b54"
 Parameters = "d96e819e-fc66-5662-9728-84c9c7592b0a"
@@ -20,7 +20,7 @@ TextSearch = "7f6f6c8a-3b03-11e9-223d-e7d88259bd6c"
 
 [compat]
 InvertedFiles = "0.8"
-LIBLINEAR = "0.7"
+LIBSVM = "0.8"
 MLUtils = "0.4"
 Parameters = "0.12"
 SearchModels = "0.4"

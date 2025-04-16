@@ -10,7 +10,7 @@ end
 function MicroTC_Config(;
         textconfig=TextConfig(),
         textmodel=EntModelConfig(),
-        cls=LiblinearConfig(1.0, 0.1)
+        cls=LIBSVMConfig(1.0, 0.1)
     )
     
     MicroTC_Config(textconfig, textmodel, cls)
@@ -38,7 +38,7 @@ Base.isequal(a::MicroTC_Config, b::MicroTC_Config) = repr(a) == repr(b)
 
 function MicroTC_ConfigSpace(;
         textmodel=[VectorModelConfigSpace(), EntModelConfigSpace()],
-        cls=[LiblinearConfigSpace()],
+        cls=[LIBSVMConfigSpace()],
         textconfig::TextConfigSpace = TextConfigSpace()
     )
 

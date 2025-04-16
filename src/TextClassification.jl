@@ -9,7 +9,7 @@ using Parameters, InvertedFiles
 include("scores.jl")
 include("textconfigspace.jl")
 include("textmodelspace.jl")
-include("liblinearconfig.jl")
+include("libsvmconfig.jl")
 include("microtcconfig.jl")
 include("microtc.jl")
 include("utils.jl")
