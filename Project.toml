@@ -1,11 +1,12 @@
 name = "TextClassification"
 uuid = "8e067cb0-742a-4f90-93f9-f1fa01b385ec"
 authors = ["Eric S. Tellez <donsadit@gmail.com>"]
-version = "0.6.0"
+version = "0.6.1"
 
 [deps]
 Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 InvertedFiles = "b20bd276-2c70-11ec-161a-3d1e1109a1c3"
+IterTools = "c8e1da08-722c-5040-9ed9-7db0dc04731e"
 LIBSVM = "b1bec4e5-fd48-53fe-b0cb-9723c09d164b"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 MLUtils = "f1d291b0-491e-4a28-83b9-f70985020b54"
@@ -20,6 +21,7 @@ TextSearch = "7f6f6c8a-3b03-11e9-223d-e7d88259bd6c"
 
 [compat]
 InvertedFiles = "0.8"
+IterTools = "^1.0"
 LIBSVM = "0.8"
 MLUtils = "0.4"
 Parameters = "0.12"

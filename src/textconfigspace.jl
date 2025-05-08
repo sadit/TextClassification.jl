@@ -1,6 +1,6 @@
 # This file is part of TextClassification.jl
 
-using Random
+using Random, IterTools
 
 function filtered_power_set(set, lowersize=0, uppersize=5)
     lst = collect(subsets(set))

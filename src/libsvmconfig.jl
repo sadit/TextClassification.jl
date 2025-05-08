@@ -18,7 +18,7 @@ function balanced_weights(y)
     C = countmap(y)
     s = sum(values(C))
     nc = length(C)
-    Dict{Any,Float64}(label => (s / (nc * count)) for (label, count) in C)
+    Dict{eltype(y),Float64}(label => (s / (nc * count)) for (label, count) in C)
 end
 
 function create(config::LIBSVMConfig, train_X, train_y, dim)
