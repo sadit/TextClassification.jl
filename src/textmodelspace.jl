@@ -34,13 +34,13 @@ end
 
 Base.eltype(::EntModelConfigSpace) = EntModelConfig
 
-function Base.rand(space::EntModelConfigSpace)
+function Base.rand(rng::AbstractRNG, space::EntModelConfigSpace)
     EntModelConfig(
-        rand(space.local_weighting),
-        rand(space.smooth),
-        rand(space.min_token_ndocs),
-        rand(space.max_token_pdocs),
-        rand(space.weights)
+        rand(rng, space.local_weighting),
+        rand(rng, space.smooth),
+        rand(rng, space.min_token_ndocs),
+        rand(rng, space.max_token_pdocs),
+        rand(rng, space.weights)
     )
 end
 
@@ -60,7 +60,7 @@ function mutate(space::EntModelConfigSpace, c::EntModelConfig, iter)
     max_token_pdocs = space.scale_max_token_pdocs === nothing ? c.max_token_pdocs : SearchModels.scale(c.max_token_pdocs; space.scale_max_token_pdocs...)
 
     lw = SearchModels.change(c.local_weighting, space.local_weighting, p1=0.3)
-    
+
     EntModelConfig(
         lw,
         smooth,
@@ -70,7 +70,7 @@ function mutate(space::EntModelConfigSpace, c::EntModelConfig, iter)
     )
 end
 
-@with_kw struct VectorModelConfig{L_<:LocalWeighting, G_<:GlobalWeighting}
+@with_kw struct VectorModelConfig{L_<:LocalWeighting,G_<:GlobalWeighting}
     global_weighting::G_ = IdfWeighting()
     local_weighting::L_ = TfWeighting()
     min_token_ndocs::Int = 5
@@ -100,12 +100,12 @@ end
 
 Base.eltype(::VectorModelConfigSpace) = VectorModelConfig
 
-function Base.rand(space::VectorModelConfigSpace)
+function Base.rand(rng::AbstractRNG, space::VectorModelConfigSpace)
     VectorModelConfig(
-        rand(space.global_weighting),
-        rand(space.local_weighting),
-        rand(space.min_token_ndocs),
-        rand(space.max_token_pdocs),
+        rand(rng, space.global_weighting),
+        rand(rng, space.local_weighting),
+        rand(rng, space.min_token_ndocs),
+        rand(rng, space.max_token_pdocs),
     )
 end
 

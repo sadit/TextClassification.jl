@@ -1,22 +1,22 @@
 # This file is part of TextClassification.jl
 export MicroTC_Config, MicroTC_ConfigSpace, TextConfigSpace
 
-struct MicroTC_Config{T_, C_}
+struct MicroTC_Config{T_,C_}
     textconfig::TextConfig
     textmodel::T_
     cls::C_
 end
 
 function MicroTC_Config(;
-        textconfig=TextConfig(),
-        textmodel=EntModelConfig(),
-        cls=LIBSVMConfig(1.0, 0.1)
-    )
-    
+    textconfig=TextConfig(),
+    textmodel=EntModelConfig(),
+    cls=LIBSVMConfig(1.0, 0.1)
+)
+
     MicroTC_Config(textconfig, textmodel, cls)
 end
 
-function Base.show(io::IO, config::MicroTC_Config) 
+function Base.show(io::IO, config::MicroTC_Config)
     print(io, "{MicroTC_Config ")
     show(io, config.textconfig)
     print(io, " ")
@@ -37,22 +37,22 @@ Base.hash(c::MicroTC_Config) = hash(repr(c))
 Base.isequal(a::MicroTC_Config, b::MicroTC_Config) = repr(a) == repr(b)
 
 function MicroTC_ConfigSpace(;
-        textmodel=[VectorModelConfigSpace(), EntModelConfigSpace()],
-        cls=[LIBSVMConfigSpace()],
-        textconfig::TextConfigSpace = TextConfigSpace()
-    )
+    textmodel=[VectorModelConfigSpace(), EntModelConfigSpace()],
+    cls=[LIBSVMConfigSpace()],
+    textconfig::TextConfigSpace=TextConfigSpace()
+)
 
     MicroTC_ConfigSpace(textconfig, textmodel, cls)
 end
 
-function Base.rand(space::MicroTC_ConfigSpace)
-    T = space.textmodel isa AbstractArray ? rand(space.textmodel) : space.textmodel
-    C = space.cls isa AbstractArray ? rand(space.cls) : space.cls
+function Base.rand(rng::AbstractRNG, space::MicroTC_ConfigSpace)
+    T = space.textmodel isa AbstractArray ? rand(rng, space.textmodel) : space.textmodel
+    C = space.cls isa AbstractArray ? rand(rng, space.cls) : space.cls
 
     MicroTC_Config(;
-        textconfig=rand(space.textconfig),
-        textmodel=rand(T),
-        cls=rand(C)
+        textconfig=rand(rng, space.textconfig),
+        textmodel=rand(rng, T),
+        cls=rand(rng, C)
     )
 end
 

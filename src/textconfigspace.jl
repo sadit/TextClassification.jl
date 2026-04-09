@@ -29,26 +29,22 @@ end
 
 Base.eltype(::TextConfigSpace) = TextConfig
 
-function Base.rand(space::TextConfigSpace)
-    qlist = isempty(space.qlist) ? Int[] : rand(space.qlist)
-    nlist = isempty(space.nlist) ? Int[] : rand(space.nlist)
-    slist = isempty(space.slist) ? Skipgram[] : rand(space.slist)
+function Base.rand(rng::AbstractRNG, space::TextConfigSpace)
+    qlist = isempty(space.qlist) ? Int[] : rand(rng, space.qlist)
+    nlist = isempty(space.nlist) ? Int[] : rand(rng, space.nlist)
+    slist = isempty(space.slist) ? Skipgram[] : rand(rng, space.slist)
 
     if length(qlist) + length(nlist) + length(slist) == 0
         nlist = [1]
     end
 
     TextConfig(;
-        del_diac = rand(space.del_diac),
-        del_dup = rand(space.del_dup),
-        del_punc = rand(space.del_punc),
-
-        group_num = rand(space.group_num),
-        group_url = rand(space.group_url),
-        group_usr = rand(space.group_usr),
-        group_emo = rand(space.group_emo),
-        
-        lc = rand(space.lc),
+        del_diac=rand(rng, space.del_diac),
+        del_dup=rand(rng, space.del_dup),
+        del_punc=rand(rng, space.del_punc), group_num=rand(rng, space.group_num),
+        group_url=rand(rng, space.group_url),
+        group_usr=rand(rng, space.group_usr),
+        group_emo=rand(rng, space.group_emo), lc=rand(rng, space.lc),
         qlist,
         nlist,
         slist
@@ -65,7 +61,7 @@ function combine(a::TextConfig, b::TextConfig)
     if length(qlist) + length(nlist) + length(slist) == 0
         nlist = [1]
     end
-    
+
     TextConfig(;
         rand(L).del_diac,
         rand(L).del_dup,
@@ -75,14 +71,14 @@ function combine(a::TextConfig, b::TextConfig)
         rand(L).group_usr,
         rand(L).group_emo,
         rand(L).lc,
-        qlist=sort!(qlist), 
+        qlist=sort!(qlist),
         nlist=sort!(nlist),
         slist=sort!(slist)
     )
 end
 
 function mutate_token_list(lst, L; p1=0.5, p2=0.5)
-    if length(L) == 0 || rand() < p1 
+    if length(L) == 0 || rand() < p1
         return lst
     end
 
@@ -107,16 +103,16 @@ function mutate(space::TextConfigSpace, c::TextConfig, iter)
     if length(qlist) + length(nlist) + length(slist) == 0
         nlist = [1]
     end
-    
+
     TextConfig(;
-        del_diac = SearchModels.change(c.del_diac, space.del_diac),
-        del_dup = SearchModels.change(c.del_dup, space.del_dup),
-        del_punc = SearchModels.change(c.del_punc, space.del_punc),
-        group_num = SearchModels.change(c.group_num, space.group_num),
-        group_url = SearchModels.change(c.group_url, space.group_url),
-        group_usr = SearchModels.change(c.group_usr, space.group_usr),
-        group_emo = SearchModels.change(c.group_emo, space.group_emo),
-        lc = SearchModels.change(c.lc, space.lc),
+        del_diac=SearchModels.change(c.del_diac, space.del_diac),
+        del_dup=SearchModels.change(c.del_dup, space.del_dup),
+        del_punc=SearchModels.change(c.del_punc, space.del_punc),
+        group_num=SearchModels.change(c.group_num, space.group_num),
+        group_url=SearchModels.change(c.group_url, space.group_url),
+        group_usr=SearchModels.change(c.group_usr, space.group_usr),
+        group_emo=SearchModels.change(c.group_emo, space.group_emo),
+        lc=SearchModels.change(c.lc, space.lc),
         qlist,
         nlist,
         slist

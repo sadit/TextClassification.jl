@@ -4,19 +4,19 @@ using MLUtils, LinearAlgebra
 import TextSearch: vectorize, vectorize_corpus, BOW
 import StatsBase: predict
 import Base: hash, isequal
-export filtered_power_set, predict, predict_corpus, vectorize, vectorize_corpus, 
-        MicroTC, AngleDistance, CosineDistance, NormalizedAngleDistance, NormalizedCosineDistance
+export filtered_power_set, predict, predict_corpus, vectorize, vectorize_corpus,
+    MicroTC, AngleDistance, CosineDistance, NormalizedAngleDistance, NormalizedCosineDistance
 import Base: hash, isequal
 using SparseArrays
 
-struct MicroTC{C_<:MicroTC_Config, CLS_<:Any, TextModel_<:TextModel}
+struct MicroTC{C_<:MicroTC_Config,CLS_<:Any,TextModel_<:TextModel}
     config::C_
     cls::CLS_
     textmodel::TextModel_
     textconfig::TextConfig
 end
 
-function Base.show(io::IO, model::MicroTC) 
+function Base.show(io::IO, model::MicroTC)
     print(io, "{MicroTC")
     show(io, model.config)
     print(io, " ")
@@ -43,22 +43,25 @@ Base.broadcastable(tc::MicroTC) = (tc,)
 Creates a MicroTC model on the given dataset and configuration
 """
 function MicroTC(
-            config::MicroTC_Config,
-            train_corpus::AbstractVector,
-            train_y;
-            textconfig=config.textconfig,
-            verbose=true,
-            minbatch=0
-        )
-    
+    config::MicroTC_Config,
+    train_corpus::AbstractVector,
+    train_y;
+    textconfig=config.textconfig,
+    verbose=true,
+    minbatch=0
+)
+
     ## vectorization and tokenization make heavy use of multithreading, we lock other threads here to allow the running thread can take others inside the block without resource competition
-    textmodel = create(config.textmodel, textconfig, train_corpus, train_y; minbatch)    
+    textmodel = create(config.textmodel, textconfig, train_corpus, train_y; minbatch)
     X = vectorize_corpus(textmodel, train_corpus; minbatch)
     mask = BitVector(undef, length(train_corpus))
     for (i, x) in enumerate(X)
         mask[i] = !(length(x) == 1 && haskey(x, 0))
     end
 
+    @info "................."
+    @info typeof(X)
+    @info typeof(X[mask])
     m = sum(mask)
     if m != length(mask)
         @warn "using $(m) of $(length(mask)) examples after vectorization using $(config)"
@@ -69,12 +72,12 @@ function MicroTC(
 end
 
 function MicroTC(
-        config::MicroTC_Config,
-        textmodel::TextModel,
-        train_X::AbstractVector{S},
-        train_y;
-        textconfig=config.textconfig,
-        verbose=true) where {S<:SVEC}
+    config::MicroTC_Config,
+    textmodel::TextModel,
+    train_X::AbstractVector,
+    train_y::AbstractVector;
+    textconfig=config.textconfig,
+    verbose=true)
     cls = create(config.cls, train_X, train_y, vocsize(textmodel))
     MicroTC(config, cls, textmodel, textconfig)
 end
@@ -96,10 +99,10 @@ function vectorize(tc::MicroTC, bow::BOW; normalize=true)::SVEC
 end
 
 function vectorize_corpus(tc::MicroTC, corpus;
-        textconfig=tc.textconfig,
-        minbatch=0,
-        normalize=true
-    )
+    textconfig=tc.textconfig,
+    minbatch=0,
+    normalize=true
+)
     vectorize_corpus(tc.textmodel, textconfig, corpus; normalize, minbatch)
 end
 

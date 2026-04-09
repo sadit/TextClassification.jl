@@ -5,8 +5,8 @@ Random.seed!(1)
 
 @testset "microtc" begin
     !isfile("emo50k.json.gz") && Downloads.download("https://github.com/sadit/TextClassificationTutorial/raw/main/data/emo50k.json.gz", "emo50k.json.gz")
-    labels = []
-    corpus = []
+    labels = String[]
+    corpus = String[]
     targets = ("♡", "💔")
     open("emo50k.json.gz") do f
         gz = GzipDecompressorStream(f)

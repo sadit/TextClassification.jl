@@ -21,13 +21,16 @@ function balanced_weights(y)
     Dict{eltype(y),Float64}(label => (s / (nc * count)) for (label, count) in C)
 end
 
-function create(config::LIBSVMConfig, train_X, train_y, dim)
-    train_X_ = sparse(train_X, dim)
+function create(config::LIBSVMConfig, train_X::AbstractVector{Dict{Ti,Tv}}, train_y, dim) where {Ti<:Integer,Tv<:Number}
+    train_X_ = TextSearch.sparse_coo(train_X, dim)
+    #@show typeof(train_X) typeof(train_y) size(train_X) size(train_y) dim
+    #I, J, V = TextSearch.sparse_coo(train_X, dim)
+    #train_X_ = sparse(I, J, V, dim)
     nt = Threads.nthreads()
     verbose = true
     kernel = Kernel.Linear
     weights = balanced_weights(train_y)
-    cls = svmtrain(train_X_, train_y; nt, weights, verbose, kernel, cost=config.C, )
+    cls = svmtrain(train_X_, train_y; nt, weights, verbose, kernel, cost=config.C,)
     LIBSVMWrapper(dim, cls)
 end
 
@@ -41,8 +44,8 @@ end
 
 Base.eltype(::LIBSVMConfigSpace) = LIBSVMConfig
 
-function Base.rand(space::LIBSVMConfigSpace)
-    LIBSVMConfig(rand(space.C), rand(space.weights))
+function Base.rand(rng::AbstractRNG, space::LIBSVMConfigSpace)
+    LIBSVMConfig(rand(rng, space.C), rand(rng, space.weights))
 end
 
 function combine(a::LIBSVMConfig, b::LIBSVMConfig)
