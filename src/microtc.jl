@@ -4,8 +4,7 @@ using MLUtils, LinearAlgebra
 import TextSearch: vectorize, vectorize_corpus, BOW
 import StatsBase: predict
 import Base: hash, isequal
-export filtered_power_set, predict, predict_corpus, vectorize, vectorize_corpus,
-    MicroTC, AngleDistance, CosineDistance, NormalizedAngleDistance, NormalizedCosineDistance
+export filtered_power_set, predict, predict_corpus, vectorize, vectorize_corpus, MicroTC
 import Base: hash, isequal
 using SparseArrays
 
@@ -13,7 +12,6 @@ struct MicroTC{C_<:MicroTC_Config,CLS_<:Any,TextModel_<:TextModel}
     config::C_
     cls::CLS_
     textmodel::TextModel_
-    textconfig::TextConfig
 end
 
 function Base.show(io::IO, model::MicroTC)
@@ -23,8 +21,6 @@ function Base.show(io::IO, model::MicroTC)
     show(io, typeof(model.cls))
     print(io, " ")
     show(io, model.textmodel)
-    print(io, " ")
-    show(io, model.textconfig)
     print(io, "}")
 end
 
@@ -44,7 +40,7 @@ Creates a MicroTC model on the given dataset and configuration
 """
 function MicroTC(
     config::MicroTC_Config,
-    train_corpus::AbstractVector,
+    train_corpus,
     train_y;
     textconfig=config.textconfig,
     verbose=true,
@@ -59,15 +55,12 @@ function MicroTC(
         mask[i] = !(length(x) == 1 && haskey(x, 0))
     end
 
-    @info "................."
-    @info typeof(X)
-    @info typeof(X[mask])
     m = sum(mask)
     if m != length(mask)
         @warn "using $(m) of $(length(mask)) examples after vectorization using $(config)"
-        MicroTC(config, textmodel, X[mask], train_y[mask]; textconfig)
+        MicroTC(config, textmodel, X[mask], train_y[mask])
     else
-        MicroTC(config, textmodel, X, train_y; textconfig)
+        MicroTC(config, textmodel, X, train_y)
     end
 end
 
@@ -76,10 +69,9 @@ function MicroTC(
     textmodel::TextModel,
     train_X::AbstractVector,
     train_y::AbstractVector;
-    textconfig=config.textconfig,
     verbose=true)
     cls = create(config.cls, train_X, train_y, vocsize(textmodel))
-    MicroTC(config, cls, textmodel, textconfig)
+    MicroTC(config, cls, textmodel)
 end
 
 """
@@ -90,8 +82,8 @@ Creates a weighted vector using the model. The input `text` can be a string or a
 it also can be an already computed bag of words.
 
 """
-function vectorize(tc::MicroTC, text; textconfig=tc.textconfig, normalize=true)::SVEC
-    vectorize(tc.textmodel, textconfig, text; normalize)
+function vectorize(tc::MicroTC, text; normalize=true)::SVEC
+    vectorize(tc.textmodel, text; normalize)
 end
 
 function vectorize(tc::MicroTC, bow::BOW; normalize=true)::SVEC
@@ -99,11 +91,10 @@ function vectorize(tc::MicroTC, bow::BOW; normalize=true)::SVEC
 end
 
 function vectorize_corpus(tc::MicroTC, corpus;
-    textconfig=tc.textconfig,
     minbatch=0,
     normalize=true
 )
-    vectorize_corpus(tc.textmodel, textconfig, corpus; normalize, minbatch)
+    vectorize_corpus(tc.textmodel, corpus; normalize, minbatch)
 end
 
 """
@@ -116,7 +107,6 @@ predict(tc::MicroTC, text) = predict(tc.cls, vectorize(tc, text))
 predict(tc::MicroTC, vec::SVEC) = predict(tc.cls, vec)
 
 function predict_corpus(tc::MicroTC, corpus;
-    textconfig=tc.textconfig,
     minbatch=0,
     normalize=true)
 

@@ -60,11 +60,10 @@ function microtc(
 )
 
     (traincorpus, trainlabels), (testcorpus, testlabels) = if sample < 1.0
-        splitobs(obs; at, shuffle=true, stratified=labels)
+        splitobs(corpus; at, shuffle=true, stratified=labels)
     else
         splitobs((corpus, labels); at, shuffle=true)
     end
-
     best_list = search_models(space, initialpopulation, params; parallel) do config
         tc = MicroTC(config, traincorpus, trainlabels; verbose=true)
         ypred = predict_corpus(tc, testcorpus)

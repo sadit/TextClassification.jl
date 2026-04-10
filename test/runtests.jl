@@ -26,8 +26,9 @@ Random.seed!(1)
         @show t
     end
 
-    @show countmap(trainlabels)
-    @show countmap(testlabels)
+
+    @show typeof(corpus) typeof(traincorpus)
+    @show countmap(trainlabels) countmap(testlabels)
 
     cls, best_list = microtc(traincorpus, trainlabels)
 
@@ -38,7 +39,6 @@ Random.seed!(1)
     sc = classification_scores(testlabels, predict_corpus(cls, testcorpus))
     @info "*** Performance on test: " sc
     @test sc.accuracy > 0.6
-
 
     cls, best_list = microtc_kfolds(traincorpus, trainlabels)
 

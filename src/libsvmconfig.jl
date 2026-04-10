@@ -21,11 +21,8 @@ function balanced_weights(y)
     Dict{eltype(y),Float64}(label => (s / (nc * count)) for (label, count) in C)
 end
 
-function create(config::LIBSVMConfig, train_X::AbstractVector{Dict{Ti,Tv}}, train_y, dim) where {Ti<:Integer,Tv<:Number}
-    train_X_ = TextSearch.sparse_coo(train_X, dim)
-    #@show typeof(train_X) typeof(train_y) size(train_X) size(train_y) dim
-    #I, J, V = TextSearch.sparse_coo(train_X, dim)
-    #train_X_ = sparse(I, J, V, dim)
+function create(config::LIBSVMConfig, train_X, train_y, dim) where {Ti<:Integer,Tv<:Number}
+    train_X_ = TextSearch.sparse(train_X, dim)
     nt = Threads.nthreads()
     verbose = true
     kernel = Kernel.Linear
