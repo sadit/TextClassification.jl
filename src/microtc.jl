@@ -94,7 +94,14 @@ function vectorize_corpus(tc::MicroTC, corpus;
     minbatch=0,
     normalize=true
 )
-    vectorize_corpus(tc.textmodel, corpus; normalize, minbatch)
+    V = vectorize_corpus(tc.textmodel, corpus; normalize, minbatch)
+    for v in V
+        if length(v) == 0 # empty vector
+            v[rand(1:vocsize(tc.textmodel))] = 1f0
+        end
+    end
+
+    V
 end
 
 """
@@ -112,13 +119,6 @@ function predict_corpus(tc::MicroTC, corpus;
 
     V = vectorize_corpus(tc.textmodel, corpus; normalize, minbatch)
 
-    for v in V
-        if length(v) == 0 # empty vector
-            v[rand(1:vocsize(tc.textmodel))] = 1f0
-        end
-    end
-    #don't know if liblinear prediction is multithreading
-    n = length(V)
-    # minbatch = getminbatch(minbatch, n)
-    [predict(tc, V[i]) for i in 1:n]
+    #I don't know if liblinear prediction is already multithreading per call
+    [predict(tc, v) for v in V]
 end
